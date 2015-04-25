@@ -14,6 +14,9 @@ source [file dirname [info script]]/testing.tcl
 needs cmd after eventloop
 testConstraint socket [expr {[info commands socket] ne ""}]
 testConstraint exec [expr {[info commands exec] ne ""}]
+testConstraint signal [expr {[info commands signal] ne ""}]
+catch {[socket -ipv6 stream ::1:5000]} ipv6res
+testConstraint ipv6 [expr {$ipv6res ne "ipv6 not supported"}]
 
 test event-5.1 {Tcl_BackgroundError, HandleBgErrors procedures} jim {
     catch {rename bgerror {}}
@@ -121,10 +124,10 @@ test event-11.5 {Tcl_VwaitCmd procedure: round robin scheduling, 2 sources} {jim
     set x 0
     set y 0
     set z 0
-    fileevent $s2 readable { incr z }
+    fileevent $s2 writable { incr z }
     vwait z
     fileevent $f1 writable { incr x; if { $y == 3 } { set z done } }
-    fileevent $s2 readable { incr y; if { $x == 3 } { set z done } }
+    fileevent $s2 writable { incr y; if { $x == 3 } { set z done } }
     vwait z
     close $f1
     close $s2
@@ -150,7 +153,6 @@ test event-11.6 {Tcl_VwaitCmd procedure: round robin scheduling, same source} {s
     file delete test1 test2
     list $x $y $z
 } {3 3 done}
-
 
 test event-12.1 {Tcl_UpdateCmd procedure} {
     list [catch {update a b} msg] $msg
@@ -188,5 +190,47 @@ test event-12.4 {Tcl_UpdateCmd procedure} {
 foreach i [after info] {
     after cancel $i
 }
+
+test event-13.1 "vwait/signal" signal {
+    signal handle ALRM
+    list [catch -signal {
+        alarm 0.1
+        # This is just to prevent the vwait from exiting immediately
+        stdin readable { format test }
+        vwait forever
+    } msg] $msg
+} {5 SIGALRM}
+
+
+test event-14.1 {socket stream.server client address} {jim socket} {
+    set s1 [socket stream.server 5001]
+    after 200
+    set s2 [socket stream 127.0.0.1:5001]
+    set addr {}
+    $s1 readable {
+        $s1 accept addr
+    }
+    vwait addr
+    $s1 close
+    $s2 close
+    # Return client address without the port.
+    list [lindex [split $addr :] 0]
+} {127.0.0.1}
+
+test event-14.2 {IPv6 socket stream.server client address} {jim socket ipv6} {
+    set s1 [socket -ipv6 stream.server ::1:5001]
+    after 200
+    set s2 [socket -ipv6 stream ::1:5001]
+    set addr6 {}
+    $s1 readable {
+        $s1 accept addr6
+    }
+    vwait addr6
+    $s1 close
+    $s2 close
+    # Return client IPv6 address without the port.
+    list [join [lrange [split $addr6 :] 0 end-1] :]
+} {{[::1]}}
+
 
 testreport

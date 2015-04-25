@@ -71,6 +71,12 @@
 # define MAXPATHLEN JIM_PATH_LEN
 # endif
 
+#if defined(__MINGW32__) || defined(_MSC_VER)
+#define ISWINDOWS 1
+#else
+#define ISWINDOWS 0
+#endif
+
 /*
  *----------------------------------------------------------------------
  *
@@ -142,54 +148,57 @@ static const char *JimGetFileType(int mode)
  *
  *----------------------------------------------------------------------
  */
-
-static int set_array_int_value(Jim_Interp *interp, Jim_Obj *container, const char *key,
-    jim_wide value)
+static void AppendStatElement(Jim_Interp *interp, Jim_Obj *listObj, const char *key, jim_wide value)
 {
-    Jim_Obj *nameobj = Jim_NewStringObj(interp, key, -1);
-    Jim_Obj *valobj = Jim_NewWideObj(interp, value);
-
-    if (Jim_SetDictKeysVector(interp, container, &nameobj, 1, valobj, JIM_ERRMSG) != JIM_OK) {
-        Jim_FreeObj(interp, nameobj);
-        Jim_FreeObj(interp, valobj);
-        return JIM_ERR;
-    }
-    return JIM_OK;
-}
-
-static int set_array_string_value(Jim_Interp *interp, Jim_Obj *container, const char *key,
-    const char *value)
-{
-    Jim_Obj *nameobj = Jim_NewStringObj(interp, key, -1);
-    Jim_Obj *valobj = Jim_NewStringObj(interp, value, -1);
-
-    if (Jim_SetDictKeysVector(interp, container, &nameobj, 1, valobj, JIM_ERRMSG) != JIM_OK) {
-        Jim_FreeObj(interp, nameobj);
-        Jim_FreeObj(interp, valobj);
-        return JIM_ERR;
-    }
-    return JIM_OK;
+    Jim_ListAppendElement(interp, listObj, Jim_NewStringObj(interp, key, -1));
+    Jim_ListAppendElement(interp, listObj, Jim_NewIntObj(interp, value));
 }
 
 static int StoreStatData(Jim_Interp *interp, Jim_Obj *varName, const struct stat *sb)
 {
-    if (set_array_int_value(interp, varName, "dev", sb->st_dev) != JIM_OK) {
-        Jim_SetResultFormatted(interp, "can't set \"%#s(dev)\": variable isn't array", varName);
-        return JIM_ERR;
+    /* Just use a list to store the data */
+    Jim_Obj *listObj = Jim_NewListObj(interp, NULL, 0);
+
+    AppendStatElement(interp, listObj, "dev", sb->st_dev);
+    AppendStatElement(interp, listObj, "ino", sb->st_ino);
+    AppendStatElement(interp, listObj, "mode", sb->st_mode);
+    AppendStatElement(interp, listObj, "nlink", sb->st_nlink);
+    AppendStatElement(interp, listObj, "uid", sb->st_uid);
+    AppendStatElement(interp, listObj, "gid", sb->st_gid);
+    AppendStatElement(interp, listObj, "size", sb->st_size);
+    AppendStatElement(interp, listObj, "atime", sb->st_atime);
+    AppendStatElement(interp, listObj, "mtime", sb->st_mtime);
+    AppendStatElement(interp, listObj, "ctime", sb->st_ctime);
+    Jim_ListAppendElement(interp, listObj, Jim_NewStringObj(interp, "type", -1));
+    Jim_ListAppendElement(interp, listObj, Jim_NewStringObj(interp, JimGetFileType((int)sb->st_mode), -1));
+
+    /* Was a variable specified? */
+    if (varName) {
+        Jim_Obj *objPtr = Jim_GetVariable(interp, varName, JIM_NONE);
+        if (objPtr) {
+            if (Jim_DictSize(interp, objPtr) < 0) {
+                /* This message matches the one from Tcl */
+                Jim_SetResultFormatted(interp, "can't set \"%#s(dev)\": variable isn't array", varName);
+                Jim_FreeNewObj(interp, listObj);
+                return JIM_ERR;
+            }
+
+            if (Jim_IsShared(objPtr))
+                objPtr = Jim_DuplicateObj(interp, objPtr);
+
+            /* Just cheat here and append as a list and convert to a dict */
+            Jim_ListAppendList(interp, objPtr, listObj);
+            Jim_DictSize(interp, objPtr);
+            Jim_InvalidateStringRep(objPtr);
+
+            Jim_FreeNewObj(interp, listObj);
+            listObj = objPtr;
+        }
+        Jim_SetVariable(interp, varName, listObj);
     }
-    set_array_int_value(interp, varName, "ino", sb->st_ino);
-    set_array_int_value(interp, varName, "mode", sb->st_mode);
-    set_array_int_value(interp, varName, "nlink", sb->st_nlink);
-    set_array_int_value(interp, varName, "uid", sb->st_uid);
-    set_array_int_value(interp, varName, "gid", sb->st_gid);
-    set_array_int_value(interp, varName, "size", sb->st_size);
-    set_array_int_value(interp, varName, "atime", sb->st_atime);
-    set_array_int_value(interp, varName, "mtime", sb->st_mtime);
-    set_array_int_value(interp, varName, "ctime", sb->st_ctime);
-    set_array_string_value(interp, varName, "type", JimGetFileType((int)sb->st_mode));
 
     /* And also return the value */
-    Jim_SetResult(interp, Jim_GetVariable(interp, varName, 0));
+    Jim_SetResult(interp, listObj);
 
     return JIM_OK;
 }
@@ -207,12 +216,10 @@ static int file_cmd_dirname(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
     else if (p == path) {
         Jim_SetResultString(interp, "/", -1);
     }
-#if defined(__MINGW32__) || defined(_MSC_VER)
-    else if (p[-1] == ':') {
+    else if (ISWINDOWS && p[-1] == ':') {
         /* z:/dir => z:/ */
         Jim_SetResultString(interp, path, p - path + 1);
     }
-#endif
     else {
         Jim_SetResultString(interp, path, p - path);
     }
@@ -299,12 +306,10 @@ static int file_cmd_join(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
             /* Absolute component, so go back to the start */
             last = newname;
         }
-#if defined(__MINGW32__) || defined(_MSC_VER)
-        else if (strchr(part, ':')) {
-            /* Absolute compontent on mingw, so go back to the start */
+        else if (ISWINDOWS && strchr(part, ':')) {
+            /* Absolute component on mingw, so go back to the start */
             last = newname;
         }
-#endif
         else if (part[0] == '.') {
             if (part[1] == '/') {
                 part += 2;
@@ -333,7 +338,10 @@ static int file_cmd_join(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 
         /* Remove a slash if needed */
         if (last > newname + 1 && last[-1] == '/') {
-            *--last = 0;
+            /* but on on Windows, leave the trailing slash on "c:/ " */
+            if (!ISWINDOWS || !(last > newname + 2 && last[-2] == ':')) {
+                *--last = 0;
+            }
         }
     }
 
@@ -348,10 +356,7 @@ static int file_cmd_join(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 
 static int file_access(Jim_Interp *interp, Jim_Obj *filename, int mode)
 {
-    const char *path = Jim_String(filename);
-    int rc = access(path, mode);
-
-    Jim_SetResultBool(interp, rc != -1);
+    Jim_SetResultBool(interp, access(Jim_String(filename), mode) != -1);
 
     return JIM_OK;
 }
@@ -371,9 +376,7 @@ static int file_cmd_executable(Jim_Interp *interp, int argc, Jim_Obj *const *arg
 #ifdef X_OK
     return file_access(interp, argv[0], X_OK);
 #else
-    /* XXX: X_OK doesn't work under Windows.
-     * In any case, may need to add .exe, etc. so just lie!
-     */
+    /* If no X_OK, just assume true. */
     Jim_SetResultBool(interp, 1);
     return JIM_OK;
 #endif
@@ -485,29 +488,17 @@ static int file_cmd_mkdir(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
     return JIM_OK;
 }
 
-#ifdef HAVE_MKSTEMP
 static int file_cmd_tempfile(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 {
-    int fd;
-    char *filename;
-    const char *template = "/tmp/tcl.tmp.XXXXXX";
+    int fd = Jim_MakeTempFile(interp, (argc >= 1) ? Jim_String(argv[0]) : NULL);
 
-    if (argc >= 1) {
-        template = Jim_String(argv[0]);
-    }
-    filename = Jim_StrDup(template);
-
-    fd = mkstemp(filename);
     if (fd < 0) {
-        Jim_SetResultString(interp, "Failed to create tempfile", -1);
         return JIM_ERR;
     }
     close(fd);
 
-    Jim_SetResult(interp, Jim_NewStringObjNoAlloc(interp, filename, -1));
     return JIM_OK;
 }
-#endif
 
 static int file_cmd_rename(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 {
@@ -542,6 +533,44 @@ static int file_cmd_rename(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
     return JIM_OK;
 }
 
+#if defined(HAVE_LINK) && defined(HAVE_SYMLINK)
+static int file_cmd_link(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
+{
+    int ret;
+    const char *source;
+    const char *dest;
+    static const char * const options[] = { "-hard", "-symbolic", NULL };
+    enum { OPT_HARD, OPT_SYMBOLIC, };
+    int option = OPT_HARD;
+
+    if (argc == 3) {
+        if (Jim_GetEnum(interp, argv[0], options, &option, NULL, JIM_ENUM_ABBREV | JIM_ERRMSG) != JIM_OK) {
+            return JIM_ERR;
+        }
+        argv++;
+        argc--;
+    }
+
+    dest = Jim_String(argv[0]);
+    source = Jim_String(argv[1]);
+
+    if (option == OPT_HARD) {
+        ret = link(source, dest);
+    }
+    else {
+        ret = symlink(source, dest);
+    }
+
+    if (ret != 0) {
+        Jim_SetResultFormatted(interp, "error linking \"%#s\" to \"%#s\": %s", argv[0], argv[1],
+            strerror(errno));
+        return JIM_ERR;
+    }
+
+    return JIM_OK;
+}
+#endif
+
 static int file_stat(Jim_Interp *interp, Jim_Obj *filename, struct stat *sb)
 {
     const char *path = Jim_String(filename);
@@ -553,10 +582,7 @@ static int file_stat(Jim_Interp *interp, Jim_Obj *filename, struct stat *sb)
     return JIM_OK;
 }
 
-#ifndef HAVE_LSTAT
-#define lstat stat
-#endif
-
+#ifdef HAVE_LSTAT
 static int file_lstat(Jim_Interp *interp, Jim_Obj *filename, struct stat *sb)
 {
     const char *path = Jim_String(filename);
@@ -567,6 +593,9 @@ static int file_lstat(Jim_Interp *interp, Jim_Obj *filename, struct stat *sb)
     }
     return JIM_OK;
 }
+#else
+#define file_lstat file_stat
+#endif
 
 static int file_cmd_atime(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 {
@@ -695,6 +724,7 @@ static int file_cmd_type(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
     return JIM_OK;
 }
 
+#ifdef HAVE_LSTAT
 static int file_cmd_lstat(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 {
     struct stat sb;
@@ -702,8 +732,11 @@ static int file_cmd_lstat(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
     if (file_lstat(interp, argv[0], &sb) != JIM_OK) {
         return JIM_ERR;
     }
-    return StoreStatData(interp, argv[1], &sb);
+    return StoreStatData(interp, argc == 2 ? argv[1] : NULL, &sb);
 }
+#else
+#define file_cmd_lstat file_cmd_stat
+#endif
 
 static int file_cmd_stat(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 {
@@ -712,7 +745,7 @@ static int file_cmd_stat(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
     if (file_stat(interp, argv[0], &sb) != JIM_OK) {
         return JIM_ERR;
     }
-    return StoreStatData(interp, argv[1], &sb);
+    return StoreStatData(interp, argc == 2 ? argv[1] : NULL, &sb);
 }
 
 static const jim_subcmd_type file_command_table[] = {
@@ -821,7 +854,6 @@ static const jim_subcmd_type file_command_table[] = {
         -1,
         /* Description: Creates the directories */
     },
-#ifdef HAVE_MKSTEMP
     {   "tempfile",
         "?template?",
         file_cmd_tempfile,
@@ -829,7 +861,6 @@ static const jim_subcmd_type file_command_table[] = {
         1,
         /* Description: Creates a temporary filename */
     },
-#endif
     {   "rename",
         "?-force? source dest",
         file_cmd_rename,
@@ -837,6 +868,15 @@ static const jim_subcmd_type file_command_table[] = {
         3,
         /* Description: Renames a file */
     },
+#if defined(HAVE_LINK) && defined(HAVE_SYMLINK)
+    {   "link",
+        "?-symbolic|-hard? newname target",
+        file_cmd_link,
+        2,
+        3,
+        /* Description: Creates a hard or soft link */
+    },
+#endif
 #if defined(HAVE_READLINK)
     {   "readlink",
         "name",
@@ -854,18 +894,18 @@ static const jim_subcmd_type file_command_table[] = {
         /* Description: Size of file */
     },
     {   "stat",
-        "name var",
+        "name ?var?",
         file_cmd_stat,
+        1,
         2,
-        2,
-        /* Description: Stores results of stat in var array */
+        /* Description: Returns results of stat, and may store in var array */
     },
     {   "lstat",
-        "name var",
+        "name ?var?",
         file_cmd_lstat,
+        1,
         2,
-        2,
-        /* Description: Stores results of lstat in var array */
+        /* Description: Returns results of lstat, and may store in var array */
     },
     {   "type",
         "name",
@@ -923,26 +963,24 @@ static int Jim_CdCmd(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 
 static int Jim_PwdCmd(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 {
-    const int cwd_len = 2048;
-    char *cwd = malloc(cwd_len);
+    char *cwd = Jim_Alloc(MAXPATHLEN);
 
-    if (getcwd(cwd, cwd_len) == NULL) {
+    if (getcwd(cwd, MAXPATHLEN) == NULL) {
         Jim_SetResultString(interp, "Failed to get pwd", -1);
+        Jim_Free(cwd);
         return JIM_ERR;
     }
-#if defined(__MINGW32__) || defined(_MSC_VER)
-    {
-        /* Try to keep backlashes out of paths */
+    else if (ISWINDOWS) {
+        /* Try to keep backslashes out of paths */
         char *p = cwd;
         while ((p = strchr(p, '\\')) != NULL) {
             *p++ = '/';
         }
     }
-#endif
 
     Jim_SetResultString(interp, cwd, -1);
 
-    free(cwd);
+    Jim_Free(cwd);
     return JIM_OK;
 }
 

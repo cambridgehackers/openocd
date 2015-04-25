@@ -102,7 +102,8 @@ am__objects_1 = aduc702x.lo at91sam4.lo at91sam4l.lo at91samd.lo \
 	non_cfi.lo ocl.lo pic32mx.lo spi.lo stmsmi.lo stellaris.lo \
 	stm32f1x.lo stm32f2x.lo stm32lx.lo str7x.lo str9x.lo \
 	str9xpec.lo tms470.lo virtual.lo fm3.lo dsp5680xx_flash.lo \
-	kinetis.lo mini51.lo nuc1x.lo nrf51.lo
+	kinetis.lo mini51.lo nuc1x.lo nrf51.lo mrvlqspi.lo psoc4.lo \
+	sim3x.lo
 am_libocdflashnor_la_OBJECTS = core.lo tcl.lo $(am__objects_1) \
 	drivers.lo
 libocdflashnor_la_OBJECTS = $(am_libocdflashnor_la_OBJECTS)
@@ -182,9 +183,7 @@ AUTOMAKE = @AUTOMAKE@
 AWK = @AWK@
 CC = @CC@
 CCDEPMODE = @CCDEPMODE@
-CC_FOR_BUILD = @CC_FOR_BUILD@
 CFLAGS = @CFLAGS@
-CFLAGS_FOR_BUILD = @CFLAGS_FOR_BUILD@
 CPP = @CPP@
 CPPFLAGS = @CPPFLAGS@
 CYGPATH_W = @CYGPATH_W@
@@ -198,7 +197,6 @@ ECHO_N = @ECHO_N@
 ECHO_T = @ECHO_T@
 EGREP = @EGREP@
 EXEEXT = @EXEEXT@
-EXEEXT_FOR_BUILD = @EXEEXT_FOR_BUILD@
 FGREP = @FGREP@
 GREP = @GREP@
 HIDAPI_CFLAGS = @HIDAPI_CFLAGS@
@@ -352,7 +350,10 @@ NOR_DRIVERS = \
 	kinetis.c \
 	mini51.c \
 	nuc1x.c \
-	nrf51.c
+	nrf51.c \
+	mrvlqspi.c \
+	psoc4.c \
+	sim3x.c
 
 noinst_HEADERS = \
 	core.h \
@@ -442,11 +443,14 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lpcspifi.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mdr.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mini51.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mrvlqspi.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/non_cfi.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/nrf51.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/nuc1x.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ocl.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pic32mx.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/psoc4.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sim3x.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/spi.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/stellaris.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/stm32f1x.Plo@am__quote@

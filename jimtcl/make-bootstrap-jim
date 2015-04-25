@@ -46,7 +46,7 @@ tclexts="bootstrap initjimsh glob stdlib tclcompat"
 # Note ordering
 allexts="bootstrap aio readdir glob regexp file exec clock array stdlib tclcompat"
 
-echo "/* This is single source file, bootstrap version of Jim Tcl. See http://jim.berlios.de/ */"
+echo "/* This is single source file, bootstrap version of Jim Tcl. See http://jim.tcl.tk/ */"
 
 # define some core features
 for i in _GNU_SOURCE JIM_TCL_COMPAT JIM_REFERENCES JIM_ANSIC JIM_REGEXP HAVE_NO_AUTOCONF _JIMAUTOCONF_H; do
@@ -81,11 +81,16 @@ cat <<EOF
 #define HAVE_VFORK
 #define HAVE_WAITPID
 #define HAVE_ISATTY
+#define HAVE_MKSTEMP
+#define HAVE_LINK
 #define HAVE_SYS_TIME_H
 #define HAVE_DIRENT_H
 #define HAVE_UNISTD_H
 #endif
 EOF
+
+# get JIM_VERSION from auto.def
+sed -n -e 's/^\(define JIM_VERSION.*\)/#\1/p' auto.def
 
 outputsource()
 {

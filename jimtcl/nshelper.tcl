@@ -1,3 +1,9 @@
+# Implements script-based implementations of various namespace
+# subcommands
+#
+# (c) 2011 Steve Bennett <steveb@workware.net.au>
+#
+
 proc {namespace delete} {args} {
 	foreach name $args {
 		if {$name ni {:: ""}} {
@@ -57,7 +63,22 @@ proc {namespace import} {args} {
 
 	foreach pattern $args {
 		foreach cmd [info commands [namespace canon $current $pattern]] {
-			alias ${current}::[namespace tail $cmd] $cmd
+			if {[namespace qualifiers $cmd] eq $current} {
+				return -code error "import pattern \"$pattern\" tries to import from namespace \"$current\" into itself"
+			}
+			# What if this alias would create a loop?
+			# follow the target alias chain to see if we are creating a loop
+			set newcmd ${current}::[namespace tail $cmd]
+
+			set alias $cmd
+			while {[exists -alias $alias]} {
+				set alias [info alias $alias]
+				if {$alias eq $newcmd} {
+					return -code error "import pattern \"$pattern\" would create a loop"
+				}
+			}
+
+			alias $newcmd $cmd
 		}
 	}
 }
@@ -109,7 +130,7 @@ proc {namespace info} {cmd {pattern *}} {
 		}
 	}
 	if {$global} {
-		set result [lmap p $result { set p $prefix$p }]
+		set result [lmap p $result { string cat $prefix $p }]
 	}
 	return $result
 }

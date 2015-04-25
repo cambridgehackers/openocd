@@ -9,6 +9,11 @@ package require readdir
 
 # Return a list of all entries in $dir that match the pattern.
 proc glob.globdir {dir pattern} {
+	if {[file exists $dir/$pattern]} {
+		# Simple case
+		return [list $pattern]
+	}
+
 	set result {}
 	set files [readdir $dir]
 	lappend files . ..
@@ -68,7 +73,7 @@ proc glob.explode {pattern} {
 	foreach old $oldexp {
 		lappend newexp $old$suf
 	}
-	linsert $newexp 0 $rest
+	list $rest {*}$newexp
 }
 
 # Core glob implementation. Returns a list of files/directories inside
@@ -115,6 +120,7 @@ proc glob.glob {base pattern} {
 proc glob {args} {
 	set nocomplain 0
 	set base ""
+	set tails 0
 
 	set n 0
 	foreach arg $args {
@@ -132,16 +138,15 @@ proc glob {args} {
 			-n* {
 				set nocomplain 1
 			}
-			-t* {
-				# Ignored for Tcl compatibility
-			}
-
-			-* {
-				return -code error "bad option \"$switch\": must be -directory, -nocomplain, -tails, or --"
+			-ta* {
+				set tails 1
 			}
 			-- {
 				incr n
 				break
+			}
+			-* {
+				return -code error "bad option \"$arg\": must be -directory, -nocomplain, -tails, or --"
 			}
 			*  {
 				break
@@ -160,10 +165,10 @@ proc glob {args} {
 
 	set result {}
 	foreach pattern $args {
-		set pattern [string map {
+		set escpattern [string map {
 			\\\\ \x01 \\\{ \x02 \\\} \x03 \\, \x04
 		} $pattern]
-		set patexps [lassign [glob.explode $pattern] rest]
+		set patexps [lassign [glob.explode $escpattern] rest]
 		if {$rest ne ""} {
 			return -code error "unmatched close brace in glob pattern"
 		}
@@ -172,13 +177,19 @@ proc glob {args} {
 				\x01 \\\\ \x02 \{ \x03 \} \x04 ,
 			} $patexp]
 			foreach {realname name} [glob.glob $base $patexp] {
-				lappend result $name
+				incr n
+				if {$tails} {
+					lappend result $name
+				} else {
+					lappend result [file join $base $name]
+				}
 			}
 		}
 	}
 
 	if {!$nocomplain && [llength $result] == 0} {
-		return -code error "no files matched glob patterns"
+		set s $(([llength $args] > 1) ? "s" : "")
+		return -code error "no files matched glob pattern$s \"[join $args]\""
 	}
 
 	return $result

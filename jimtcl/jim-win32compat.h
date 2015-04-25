@@ -3,6 +3,10 @@
 
 /* Compatibility for Windows (mingw and msvc, not cygwin */
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Note that at this point we don't yet have access to jimautoconf.h */
 #if defined(_WIN32) || defined(WIN32)
 
@@ -61,8 +65,18 @@ typedef struct DIR {
 DIR *opendir(const char *name);
 int closedir(DIR *dir);
 struct dirent *readdir(DIR *dir);
-#endif /* _MSC_VER */
+
+#elif defined(__MINGW32__)
+
+#include <stdlib.h>
+#define strtod __strtod
+
+#endif
 
 #endif /* WIN32 */
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

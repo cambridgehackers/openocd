@@ -86,16 +86,6 @@ int utf8_index(const char *str, int index)
     return s - str;
 }
 
-int utf8_charequal(const char *s1, const char *s2)
-{
-    int c1, c2;
-
-    utf8_tounicode(s1, &c1);
-    utf8_tounicode(s2, &c2);
-
-    return c1 == c2;
-}
-
 int utf8_prev_len(const char *str, int len)
 {
     int n = 1;
@@ -177,6 +167,11 @@ static int utf8_map_case(const struct casemap *mapping, int num, int ch)
     }
     return ch;
 }
+
+/* Some platforms don't have isascii */
+#ifndef isascii
+#define isascii(C) (!((C) & ~0x7f))
+#endif
 
 int utf8_upper(int ch)
 {

@@ -3,7 +3,7 @@ Jim Tcl(n)
 
 NAME
 ----
-Jim Tcl v0.74 - reference manual for the Jim Tcl scripting language
+Jim Tcl v0.76 - reference manual for the Jim Tcl scripting language
 
 SYNOPSIS
 --------
@@ -51,10 +51,32 @@ Some notable differences with Tcl 8.5/8.6 are:
 
 RECENT CHANGES
 --------------
+Changes between 0.75 and 0.76
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+1. Add support for `file link`
+2. `glob` now supports the '--tails' option
+3. Add support for `string cat`
+4. Allow `info source` to add source info
+
+Changes between 0.74 and 0.75
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+1. `binary`, `pack` and `unpack` now support floating point
+2. `file copy` '-force' handles source and target as the same file
+3. `format` now supports +%b+ for binary conversion
+4. `lsort` now supports '-unique' and '-real'
+5. Add support for half-close with `aio close` ?r|w?
+6. Add `socket pair` for a bidirectional pipe
+7. Add '--random-hash' to randomise hash tables for greater security
+8. `dict` now supports 'for', 'values', 'incr', 'append', 'lappend', 'update', 'info' and 'replace'
+9. `file stat` no longer requires the variable name
 
 Changes between 0.73 and 0.74
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 1. Numbers with leading zeros are treated as decimal, not octal
+2. Add `aio isatty`
+3. Add LFS (64 bit) support for `aio seek`, `aio tell`, `aio copyto`, `file copy`
+4. `string compare` and `string equal` now support '-length'
+5. `glob` now supports '-directory'
 
 Changes between 0.72 and 0.73
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -984,13 +1006,14 @@ See REG_EXTENDED in the documentation.
 
 Using the system-supported POSIX regular expressions will typically
 make for the smallest code size, but some features such as UTF-8
-and +{backslash}w+, +{backslash}d+, +{backslash}s+ are not supported.
+and +{backslash}w+, +{backslash}d+, +{backslash}s+ are not supported, and null characters
+in strings are not supported.
 
 See regex(3) and regex(7) for full details.
 
 Jim built-in Regular Expressions
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-The Jim built-in regulare expression engine may be selected with +./configure --with-jim-regexp+
+The Jim built-in regular expression engine may be selected with +./configure --with-jim-regexp+
 or it will be selected automatically if UTF-8 support is enabled.
 
 This engine supports UTF-8 as well as some +ARE+ features. The differences with both Tcl 7.x/8.x
@@ -1004,6 +1027,7 @@ and POSIX are highlighted below.
 6. Backslash escapes may be used within regular expressions, such as +{backslash}n+ = newline, +{backslash}uNNNN+ = unicode
 7. Support for the +?+ non-greedy quantifier. e.g. +*?+
 8. Support for non-capuring parentheses +(?:...)+
+9. Jim Tcl considers that both patterns and strings end at a null character (+\x00+)
 
 COMMAND RESULTS
 ---------------
@@ -1957,6 +1981,8 @@ command.  The legal +'options'+ are:
     explicitly unset). Note that changes to the contents of +'dictionaryName'+
     only happen when +'script'+ terminates.
 
++*dict for, values, incr, append, lappend, update, info, replace*+ to be documented...
+
 env
 ~~~
 +*env* '?name? ?default?'+
@@ -2226,11 +2252,12 @@ abbreviation for +'option'+ is acceptable.  The valid options are:
     Copies file +'source'+ to file +'target'+. The source file must exist.
     The target file must not exist, unless +-force+ is specified.
 
-+*file delete ?-force?* 'name\...'+::
++*file delete ?-force? ?--?* 'name\...'+::
     Deletes file or directory +'name'+. If the file or directory doesn't exist, nothing happens.
     If it can't be deleted, an error is generated. Non-empty directories will not be deleted
     unless the +-force+ options is given. In this case no errors will be generated, even
-    if the file/directory can't be deleted.
+    if the file/directory can't be deleted. Use +'--'+ if there is any possibility of
+	the first name being +'-force'+.
 
 +*file dirname* 'name'+::
     Return all of the characters in +'name'+ up to but not including
@@ -2263,6 +2290,12 @@ abbreviation for +'option'+ is acceptable.  The valid options are:
     Joins multiple path components. Note that if any components is
     an absolute path, the preceding components are ignored.
     Thus +"`file` join /tmp /root"+ returns +"/root"+.
+
++*file link* ?*-hard|-symbolic*? 'newname target'+::
+    Creates a hard link (default) or symbolic link from +'newname'+ to +'target'+.
+	Note that the sense of this command is the opposite of `file rename` and `file copy`
+	and also of `ln`, but this is compatible with Tcl.
+    An error is returned if +'target'+ doesn't exist or +'newname'+ already exists.
 
 +*file lstat* 'name varName'+::
     Same as 'stat' option (see below) except uses the +'lstat'+
@@ -2307,8 +2340,10 @@ abbreviation for +'option'+ is acceptable.  The valid options are:
     an error is returned.  On systems that don't support symbolic links
     this option is undefined.
 
-+*file rename* 'oldname' 'newname'+::
++*file rename* ?*-force*? 'oldname' 'newname'+::
     Renames the file from the old name to the new name.
+	If +'newname'+ already exists, an error is returned unless +'-force'+ is
+	specified.
 
 +*file rootname* 'name'+::
     Return all of the characters in +'name'+ up to but not including
@@ -2320,12 +2355,9 @@ abbreviation for +'option'+ is acceptable.  The valid options are:
     If the file doesn't exist or its size cannot be queried then an
     error is generated.
 
-+*file stat* 'name varName'+::
-    Invoke the 'stat' kernel call on +'name'+, and use the
-    variable given by +'varName'+ to hold information returned from
-    the kernel call.
-    +'varName'+ is treated as an array variable,
-    and the following elements of that variable are set: 'atime',
++*file stat* 'name ?varName?'+::
+    Invoke the 'stat' kernel call on +'name'+, and return the result
+	as a dictionary with the following keys: 'atime',
     'ctime', 'dev', 'gid', 'ino', 'mode', 'mtime',
     'nlink', 'size', 'type', 'uid'.
     Each element except 'type' is a decimal string with the value of
@@ -2333,7 +2365,8 @@ abbreviation for +'option'+ is acceptable.  The valid options are:
     manual entry for 'stat' for details on the meanings of the values.
     The 'type' element gives the type of the file in the same form
     returned by the command `file type`.
-    This command returns an empty string.
+	If +'varName'+ is specified, it is taken to be the name of an array
+	variable and the values are also stored into the array.
 
 +*file tail* 'name'+::
     Return all of the characters in +'name'+ after the last slash.
@@ -2463,7 +2496,9 @@ before passing it to 'sprintf' for formatting.
 
 The only unusual conversion is for +%c+; in this case the argument
 must be a decimal string, which will then be converted to the corresponding
-ASCII character value.
+ASCII (or UTF-8) character value.
+
+In addition, Jim Tcl provides basic support for conversion to binary with +%b+.
 
 `format` does backslash substitution on its +'formatString'+
 argument, so backslash sequences in +'formatString'+ will be handled
@@ -2515,7 +2550,7 @@ for reading.
 
 glob
 ~~~~
-+*glob* ?*-nocomplain*? ?*-directory* 'dir'? ?*--*? 'pattern ?pattern \...?'+
++*glob* ?*-nocomplain*? ?*-directory* 'dir'? ?*-tails*? ?*--*? 'pattern ?pattern \...?'+
 
 This command performs filename globbing, using csh rules.  The returned
 value from `glob` is the list of expanded filenames.
@@ -2528,7 +2563,10 @@ exactly: an abbreviation will not be accepted.
 If +-directory+ is given, the +'dir'+ is understood to contain a
 directory name to search in. This allows globbing inside directories
 whose names may contain glob-sensitive characters. The returned names
-are specified relative to this directory.
+include the directory name unless +'-tails'+ is specified.
+
+If +'-tails'+ is specified, along with +-directory+, the returned names
+are relative to the given directory.
 
 global
 ~~~~~~
@@ -2703,10 +2741,12 @@ The legal +'option'+'s (which may be abbreviated) are:
     of the innermost file being processed.  Otherwise the command returns an
     empty string.
 
-+*info source* 'script'+::
-    Returns the original source location of the given script as a list of
++*info source* 'script ?filename line?'+::
+    With a single argument, returns the original source location of the given script as a list of
     +{filename linenumber}+. If the source location can't be determined, the
-    list +{{} 0}+ is returned.
+    list +{{} 0}+ is returned. If +'filename'+ and +'line'+ are given, returns a copy
+	of +'script'+ with the associate source information. This can be useful to produce
+	useful messages from `eval`, etc. if the original source information may be lost.
 
 +*info stacktrace*+::
     After an error is caught with `catch`, returns the stack trace as a list
@@ -2864,7 +2904,7 @@ affect the loop count.
 
 lindex
 ~~~~~~
-+*lindex* 'list index'+
++*lindex* 'list ?index ...?'+
 
 Treats +'list'+ as a Tcl list and returns element +'index'+ from it
 (0 refers to the first element of the list).
@@ -2874,8 +2914,14 @@ In extracting the element, +'lindex'+ observes the same rules concerning
 braces and quotes and backslashes as the Tcl command interpreter; however,
 variable substitution and command substitution do not occur.
 
+If no index values are given, simply returns +'list'+
+
 If +'index'+ is negative or greater than or equal to the number of elements
-in +'value'+, then an empty string is returned.
+in +'list'+, then an empty string is returned.
+
+If additional index arguments are supplied, then each argument is
+used in turn to select an element from the previous indexing
+operation, allowing the script to select elements from sublists.
 
 linsert
 ~~~~~~~
@@ -3125,12 +3171,16 @@ the list are to be matched against pattern and must have one of the values below
 
 lsort
 ~~~~~
-+*lsort* ?*-index* 'listindex'? ?*-integer*|*-command* 'cmdname'? ?*-decreasing*|*-increasing*? 'list'+
++*lsort* ?*-index* 'listindex'? ?*-nocase!-integer|-real|-command* 'cmdname'? ?*-unique*? ?*-decreasing*|*-increasing*? 'list'+
 
 Sort the elements of +'list'+, returning a new list in sorted order.
-By default, ASCII sorting is used, with the result in increasing order.
+By default, ASCII (or UTF-8) sorting is used, with the result in increasing order.
+
+If +-nocase+ is specified, comparisons are case-insenstive.
 
 If +-integer+ is specified, numeric sorting is used.
+
+If +-real+ is specified, floating point number sorting is used.
 
 If +-command 'cmdname'+ is specified, +'cmdname'+ is treated as a command
 name. For each comparison, +'cmdname $value1 $value2+' is called which
@@ -3141,9 +3191,9 @@ than, equal to, or greater than +'$value2'+, respectively.
 If +-decreasing+ is specified, the resulting list is in the opposite
 order to what it would be otherwise. +-increasing+ is the default.
 
-If +-index 'listindex'+ is specified, each element of the list is treated as a list and
-the given index is extracted from the list for comparison. The list index may
-be any valid list index, such as +1+, +end+ or +end-2+.
+If +-unique+ is specified, then only the last set of duplicate elements found in the list will be retained.
+Note that duplicates are determined relative to the comparison used in the sort. Thus if +-index 0+ is used,
++{1 a}+ and +{1 b}+ would be considered duplicates and only the second element, +{1 b}+, would be retained.
 
 If +-index 'listindex'+ is specified, each element of the list is treated as a list and
 the given index is extracted from the list for comparison. The list index may
@@ -3788,6 +3838,9 @@ The legal options (which may be abbreviated) are:
     Like `string range` except works on bytes rather than characters.
     These commands are identical if UTF-8 support is not enabled.
 
++*string cat* '?string1 string2 \...?'+::
+    Concatenates the given strings into a single string.
+
 +*string compare ?-nocase?* ?*-length* 'len? string1 string2'+::
     Perform a character-by-character comparison of strings +'string1'+ and
     +'string2'+ in the same way as the C 'strcmp' procedure.  Return
@@ -4404,66 +4457,67 @@ See `open` and `socket` for commands which return an I/O handle.
 
 aio
 ~~~
-+$handle *read ?-nonewline?* '?len?'+::
-    Read and return bytes from the stream. To eof if no len.
++$handle *accept* ?addrvar?+::
+    Server socket only: Accept a connection and return stream.
+    If +'addrvar'+ is specified, the address of the connected client is stored
+    in the named variable in the form 'addr:port'. See `socket` for details.
 
-+$handle *gets* '?var?'+::
-    Read one line and return it or store it in the var
++$handle *buffering none|line|full*+::
+    Sets the buffering mode of the stream.
 
-+$handle *puts ?-nonewline?* 'str'+::
-    Write the string, with newline unless -nonewline
++$handle *close* ?r(ead)|w(rite)?+::
+    Closes the stream.
+	The  two-argument form is a "half-close" on a socket. See the +shutdown(2)+ man page.
 
 +$handle *copyto* 'tofd ?size?'+::
     Copy bytes to the file descriptor +'tofd'+. If +'size'+ is specified, at most
     that many bytes will be copied. Otherwise copying continues until the end
     of the input file. Returns the number of bytes actually copied.
 
-+$handle *flush*+::
-    Flush the stream
++$handle *eof*+::
+    Returns 1 if stream is at eof
 
 +$handle *filename*+::
     Returns the original filename associated with the handle.
     Handles returned by `socket` give the socket type instead of a filename.
 
-+$handle *eof*+::
-    Returns 1 if stream is at eof
++$handle *flush*+::
+    Flush the stream
 
-+$handle *close*+::
-    Closes the stream
++$handle *gets* '?var?'+::
+    Read one line and return it or store it in the var
 
-+$handle *seek* 'offset' *?start|current|end?*+::
-    Seeks in the stream (default 'current')
-
-+$handle *tell*+::
-    Returns the current seek position
-
-+$handle *filename*+::
-    Returns the original filename used when opening the file.
-    If the handle was returned from `socket`, the type of the
-    handle is returned instead.
++$handle *isatty*+::
+    Returns 1 if the stream is a tty device.
 
 +$handle *ndelay ?0|1?*+::
     Set O_NDELAY (if arg). Returns current/new setting.
     Note that in general ANSI I/O interacts badly with non-blocking I/O.
     Use with care.
 
-+$handle *buffering none|line|full*+::
-    Sets the buffering mode of the stream.
++$handle *puts ?-nonewline?* 'str'+::
+    Write the string, with newline unless -nonewline
 
-+$handle *accept*+::
-    Server socket only: Accept a connection and return stream
-
-+$handle *sendto* 'str ?hostname:?port'+::
-    Sends the string, +'str'+, to the given address via the socket using sendto(2).
-    This is intended for udp sockets and may give an error or behave in unintended
-    ways for other handle types.
-    Returns the number of bytes written.
++$handle *read ?-nonewline?* '?len?'+::
+    Read and return bytes from the stream. To eof if no len.
 
 +$handle *recvfrom* 'maxlen ?addrvar?'+::
     Receives a message from the handle via recvfrom(2) and returns it.
     At most +'maxlen'+ bytes are read.
     If +'addrvar'+ is specified, the sending address of the message is stored in
     the named variable in the form 'addr:port'. See `socket` for details.
+
++$handle *seek* 'offset' *?start|current|end?*+::
+    Seeks in the stream (default 'current')
+
++$handle *sendto* 'str ?addr:?port'+::
+    Sends the string, +'str'+, to the given address via the socket using sendto(2).
+    This is intended for udp/dgram sockets and may give an error or behave in unintended
+    ways for other handle types.
+    Returns the number of bytes written.
+
++$handle *tell*+::
+    Returns the current seek position
 
 fconfigure
 ~~~~~~~~~~
@@ -4537,13 +4591,15 @@ Time-based execution is also available via the eventloop API.
 
 Scripts are executed at the global scope. If an error occurs during a handler script,
 an attempt is made to call (the user-defined command) `bgerror` with the details of the error.
-If the `bgerror` commands does not exist, it is printed to stderr instead.
+If the `bgerror` command does not exist, the error message details are printed to stderr instead.
 
 If a file event handler script generates an error, the handler is automatically removed
 to prevent infinite errors. (A time event handler is always removed after execution).
 
-+*bgerror* 'error'+::
-    Called when an event handler script generates an error.
++*bgerror* 'msg'+::
+    Called when an event handler script generates an error. Note that the normal command resolution
+	rules are used for bgerror. First the name is resolved in the current namespace, then in the
+	global scope.
 
 socket
 ~~~~~~
@@ -4556,7 +4612,7 @@ Various socket types may be created.
     A unix domain socket server.
 
 +*socket ?-ipv6? stream* 'addr:port'+::
-    A TCP socket client.
+    A TCP socket client. (See the forms for +'addr'+ below)
 
 +*socket ?-ipv6? stream.server* '?addr:?port'+::
     A TCP socket server (+'addr'+ defaults to +0.0.0.0+ for IPv4 or +[::]+ for IPv6).
@@ -4572,6 +4628,10 @@ Various socket types may be created.
 +*socket pipe*+::
     A pipe. Note that unlike all other socket types, this command returns
     a list of two channels: {read write}
+
++*socket pair*+::
+    A socketpair (see socketpair(2)). Like `socket pipe`, this command returns
+    a list of two channels: {s1 s2}. These channels are both readable and writable.
 
 This command creates a socket connected (client) or bound (server) to the given
 address.
@@ -4657,21 +4717,22 @@ pack: pack, unpack
 ~~~~~~~~~~~~~~~~~~
 The optional 'pack' extension provides commands to encode and decode binary strings.
 
-+*pack* 'varName value' *-intle|-intbe|-str* 'bitwidth ?bitoffset?'+::
++*pack* 'varName value' *-intle|-intbe|-floatle|-floatbe|-str* 'bitwidth ?bitoffset?'+::
     Packs the binary representation of +'value'+ into the variable
     +'varName'+. The value is packed according to the given type
-    (integer/string, big-endian/little-endian), width and bit offset.
+    (integer/floating point/string, big-endian/little-endian), width and bit offset.
     The variable is created if necessary (like `append`).
     Ihe variable is expanded if necessary.
 
-+*unpack* 'binvalue' *-intbe|-intle|-uintbe|-uintle|-str* 'bitpos bitwidth'+::
++*unpack* 'binvalue' *-intbe|-intle|-uintbe|-uintle|-floatbe|-floatle|-str* 'bitpos bitwidth'+::
     Unpacks bits from +'binvalue'+ at bit position +'bitpos'+ and with +'bitwidth'+.
-    Interprets the value according to the type (integer/string, big-endian/little-endian
+    Interprets the value according to the type (integer/floating point/string, big-endian/little-endian
     and signed/unsigned) and returns it. For integer types, +'bitwidth'+
-    may be up to the size of a Jim Tcl integer (typically 64 bits). For the string type,
-    both the width and the offset must be on a byte boundary (multiple of 8). Attempting to
-    access outside the length of the value will return 0 for integer types or the empty string
-    for the string type.
+    may be up to the size of a Jim Tcl integer (typically 64 bits). For floating point types,
+    +'bitwidth'+ may be 32 bits (for single precision numbers) or 64 bits (for double precision).
+    For the string type, both the width and the offset must be on a byte boundary (multiple of 8). Attempting to
+    access outside the length of the value will return 0 for integer types, 0.0 for floating point types
+    or the empty string for the string type.
 
 binary
 ~~~~~~
@@ -4680,13 +4741,14 @@ commands based on the low-level `pack` and `unpack` commands.
 
 See the Tcl documentation at: http://www.tcl.tk/man/tcl8.5/TclCmd/binary.htm
 
-Note that packing and unpacking of floating point values is not supported.
+Note that 'binary format' with f/r/R specifiers (single-precision float) uses the value of Infinity
+ in case of overflow.
 
 oo: class, super
 ~~~~~~~~~~~~~~~~
 The optional, pure-Tcl 'oo' extension provides object-oriented (OO) support for Jim Tcl.
 
-See the online documentation (http://jim.berlios.de/documentation/oo/) for more details.
+See the online documentation (http://jim.tcl.tk/index.html/doc/www/www/documentation/oo/) for more details.
 
 +*class* 'classname ?baseclasses? classvars'+::
     Create a new class, +'classname'+, with the given dictionary
@@ -4919,7 +4981,7 @@ The following global variables are set by jimsh.
     If jimsh is invoked to run a script, this variable contains the number
     of arguments supplied to the script.
 
-+*jim_argv0*+::
++*jim::argv0*+::
     The value of argv[0] when jimsh was invoked.
 
 CHANGES IN PREVIOUS RELEASES

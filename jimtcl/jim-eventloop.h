@@ -3,7 +3,7 @@
  * Copyright 2005 Salvatore Sanfilippo <antirez@invece.org>
  * Copyright 2005 Clemens Hintze <c.hintze@gmx.net>
  * Copyright 2005 patthoyts - Pat Thoyts <patthoyts@users.sf.net>
- * Copyright 2008 oharboe - Øyvind Harboe - oyvind.harboe@zylin.com
+ * Copyright 2008 oharboe - Ã˜yvind Harboe - oyvind.harboe@zylin.com
  * Copyright 2008 Andrew Lunn <andrew@lunn.ch>
  * Copyright 2008 Duane Ellis <openocd@duaneellis.com>
  * Copyright 2008 Uwe Klein <uklein@klein-messgeraete.de>
@@ -36,19 +36,17 @@
  * are those of the authors and should not be interpreted as representing
  * official policies, either expressed or implied, of the Jim Tcl Project.
  **/
-/* ------ USAGE -------
- *
- * In order to use this file from other extensions include it in every
- * file where you need to call the eventloop API, also in the init
- * function of your extension call Jim_ImportEventloopAPI(interp)
- * after the Jim_InitExtension() call.
- *
- * See the UDP extension as example.
- */
 
+/* ------ USAGE -------
+ * See jim-aio.c as an example of an event provider.
+ */
 
 #ifndef __JIM_EVENTLOOP_H__
 #define __JIM_EVENTLOOP_H__
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #include <stdio.h>
 
@@ -67,7 +65,7 @@ JIM_EXPORT void Jim_CreateFileHandler (Jim_Interp *interp,
         Jim_FileProc *proc, void *clientData,
         Jim_EventFinalizerProc *finalizerProc);
 JIM_EXPORT void Jim_DeleteFileHandler (Jim_Interp *interp,
-        FILE *handle);
+        FILE *handle, int mask);
 JIM_EXPORT jim_wide Jim_CreateTimeHandler (Jim_Interp *interp,
         jim_wide milliseconds,
         Jim_TimeProc *proc, void *clientData,
@@ -83,5 +81,9 @@ JIM_EXPORT int Jim_ProcessEvents (Jim_Interp *interp, int flags);
 JIM_EXPORT int Jim_EvalObjBackground (Jim_Interp *interp, Jim_Obj *scriptObjPtr);
 
 int Jim_eventloopInit(Jim_Interp *interp);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* __JIM_EVENTLOOP_H__ */

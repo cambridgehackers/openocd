@@ -28,34 +28,38 @@ int Jim_PackageProvide(Jim_Interp *interp, const char *name, const char *ver, in
         }
         return JIM_ERR;
     }
-    if (he) {
-        Jim_DeleteHashEntry(&interp->packages, name);
-    }
-    Jim_AddHashEntry(&interp->packages, name, (char *)ver);
+    Jim_ReplaceHashEntry(&interp->packages, name, (char *)ver);
     return JIM_OK;
 }
 
-static char *JimFindPackage(Jim_Interp *interp, char **prefixes, int prefixc, const char *pkgName)
+/**
+ * Searches along a of paths for the given package.
+ *
+ * Returns the allocated path to the package file if found,
+ * or NULL if not found.
+ */
+static char *JimFindPackage(Jim_Interp *interp, Jim_Obj *prefixListObj, const char *pkgName)
 {
     int i;
     char *buf = Jim_Alloc(JIM_PATH_LEN);
+    int prefixc = Jim_ListLength(interp, prefixListObj);
 
     for (i = 0; i < prefixc; i++) {
-        if (prefixes[i] == NULL)
-            continue;
+        Jim_Obj *prefixObjPtr = Jim_ListGetIndex(interp, prefixListObj, i);
+        const char *prefix = Jim_String(prefixObjPtr);
 
         /* Loadable modules are tried first */
 #ifdef jim_ext_load
-        snprintf(buf, JIM_PATH_LEN, "%s/%s.so", prefixes[i], pkgName);
+        snprintf(buf, JIM_PATH_LEN, "%s/%s.so", prefix, pkgName);
         if (access(buf, R_OK) == 0) {
             return buf;
         }
 #endif
-        if (strcmp(prefixes[i], ".") == 0) {
+        if (strcmp(prefix, ".") == 0) {
             snprintf(buf, JIM_PATH_LEN, "%s.tcl", pkgName);
         }
         else {
-            snprintf(buf, JIM_PATH_LEN, "%s/%s.tcl", prefixes[i], pkgName);
+            snprintf(buf, JIM_PATH_LEN, "%s/%s.tcl", prefix, pkgName);
         }
 
         if (access(buf, R_OK) == 0) {
@@ -71,63 +75,45 @@ static char *JimFindPackage(Jim_Interp *interp, char **prefixes, int prefixc, co
  * JIM_OK is returned, otherwise JIM_ERR is returned. */
 static int JimLoadPackage(Jim_Interp *interp, const char *name, int flags)
 {
-    Jim_Obj *libPathObjPtr;
-    char **prefixes, *path;
-    int prefixc, i, retCode = JIM_ERR;
+    int retCode = JIM_ERR;
+    Jim_Obj *libPathObjPtr = Jim_GetGlobalVariableStr(interp, JIM_LIBPATH, JIM_NONE);
+    if (libPathObjPtr) {
+        char *path;
 
-    libPathObjPtr = Jim_GetGlobalVariableStr(interp, JIM_LIBPATH, JIM_NONE);
-    if (libPathObjPtr == NULL) {
-        prefixc = 0;
-        libPathObjPtr = NULL;
-    }
-    else {
-        Jim_IncrRefCount(libPathObjPtr);
-        prefixc = Jim_ListLength(interp, libPathObjPtr);
-    }
+        /* Scan every directory for the the first match */
+        path = JimFindPackage(interp, libPathObjPtr, name);
+        if (path) {
+            const char *p;
 
-    prefixes = Jim_Alloc(sizeof(char *) * prefixc);
-    for (i = 0; i < prefixc; i++) {
-        Jim_Obj *prefixObjPtr;
+            /* Note: Even if the file fails to load, we consider the package loaded.
+             *       This prevents issues with recursion.
+             *       Use a dummy version of "" to signify this case.
+             */
+            Jim_PackageProvide(interp, name, "", 0);
 
-        if (Jim_ListIndex(interp, libPathObjPtr, i, &prefixObjPtr, JIM_NONE) != JIM_OK) {
-            prefixes[i] = NULL;
-            continue;
-        }
-        prefixes[i] = Jim_StrDup(Jim_String(prefixObjPtr));
-    }
+            /* Try to load/source it */
+            p = strrchr(path, '.');
 
-    /* Scan every directory for the the first match */
-    path = JimFindPackage(interp, prefixes, prefixc, name);
-    if (path != NULL) {
-        char *p = strrchr(path, '.');
-
-        /* Note: Even if the file fails to load, we consider the package loaded.
-         *       This prevents issues with recursion.
-         *       Use a dummy version of "" to signify this case.
-         */
-        Jim_PackageProvide(interp, name, "", 0);
-
-        /* Try to load/source it */
-        if (p && strcmp(p, ".tcl") == 0) {
-            retCode = Jim_EvalFileGlobal(interp, path);
-        }
+            if (p && strcmp(p, ".tcl") == 0) {
+                Jim_IncrRefCount(libPathObjPtr);
+                retCode = Jim_EvalFileGlobal(interp, path);
+                Jim_DecrRefCount(interp, libPathObjPtr);
+            }
 #ifdef jim_ext_load
-        else {
-            retCode = Jim_LoadLibrary(interp, path);
-        }
+            else {
+                retCode = Jim_LoadLibrary(interp, path);
+            }
 #endif
-        if (retCode != JIM_OK) {
-            /* Upon failure, remove the dummy entry */
-            Jim_DeleteHashEntry(&interp->packages, name);
+            if (retCode != JIM_OK) {
+                /* Upon failure, remove the dummy entry */
+                Jim_DeleteHashEntry(&interp->packages, name);
+            }
+            Jim_Free(path);
         }
-        Jim_Free(path);
+
+        return retCode;
     }
-    for (i = 0; i < prefixc; i++)
-        Jim_Free(prefixes[i]);
-    Jim_Free(prefixes);
-    if (libPathObjPtr)
-        Jim_DecrRefCount(interp, libPathObjPtr);
-    return retCode;
+    return JIM_ERR;
 }
 
 int Jim_PackageRequire(Jim_Interp *interp, const char *name, int flags)
@@ -135,7 +121,7 @@ int Jim_PackageRequire(Jim_Interp *interp, const char *name, int flags)
     Jim_HashEntry *he;
 
     /* Start with an empty error string */
-    Jim_SetResultString(interp, "", 0);
+    Jim_SetEmptyResult(interp);
 
     he = Jim_FindHashEntry(&interp->packages, name);
     if (he == NULL) {
@@ -143,17 +129,15 @@ int Jim_PackageRequire(Jim_Interp *interp, const char *name, int flags)
         int retcode = JimLoadPackage(interp, name, flags);
         if (retcode != JIM_OK) {
             if (flags & JIM_ERRMSG) {
-                int len;
-
-                Jim_GetString(Jim_GetResult(interp), &len);
+                int len = Jim_Length(Jim_GetResult(interp));
                 Jim_SetResultFormatted(interp, "%#s%sCan't load package %s",
                     Jim_GetResult(interp), len ? "\n" : "", name);
             }
             return retcode;
         }
 
-        /* In case the package did no 'package provide' */
-        Jim_PackageProvide(interp, name, "1.0", 0);
+        /* In case the package did not 'package provide' */
+        Jim_PackageProvide(interp, name, package_version_1, 0);
 
         /* Now it must exist */
         he = Jim_FindHashEntry(&interp->packages, name);
