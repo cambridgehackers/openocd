@@ -1,6 +1,8 @@
 # vim:se syn=tcl:
 #
 
+define JIM_VERSION 76
+
 # Note: modules which support options *must* be included before 'options'
 use cc cc-shared cc-db cc-lib
 use local
@@ -15,6 +17,8 @@ options {
     full            => "Enable some optional features: ipv6, math, utf8, binary, oo, tree"
     with-jim-shared shared => "build a shared library instead of a static library"
     jim-regexp=1    => "prefer POSIX regex if over the the built-in (Tcl-compatible) regex"
+    docs=1          => "don't build or install the documentation"
+    random-hash		=> "randomise hash tables. more secure but hash table results are not predicable"
     with-jim-ext: {with-ext:"ext1 ext2 ..."} => {
         Specify additional jim extensions to include.
         These are enabled by default:
@@ -62,7 +66,20 @@ options {
     install-jim=1
 }
 
+# Save the user-specified LIBS
+# We add detected libs to LDLIBS explicitly
+set LIBS [get-define LIBS]
+
 cc-check-types "long long"
+
+define CCOPTS ""
+define CXXOPTS ""
+if {[cctest -cflags -fno-unwind-tables]} {
+    define-append CCOPTS -fno-unwind-tables
+}
+if {[cctest -cflags -fno-asynchronous-unwind-tables]} {
+    define-append CCOPTS -fno-asynchronous-unwind-tables
+}
 
 cc-check-includes sys/time.h sys/socket.h netinet/in.h arpa/inet.h netdb.h
 cc-check-includes sys/un.h dlfcn.h unistd.h dirent.h crt_externs.h
@@ -82,8 +99,10 @@ if {[cc-check-function-in-lib socket socket]} {
 
 cc-check-functions ualarm lstat fork vfork system select execvpe
 cc-check-functions backtrace geteuid mkstemp realpath strptime isatty
-cc-check-functions regcomp waitpid sigaction sys_signame sys_siglist
+cc-check-functions regcomp waitpid sigaction sys_signame sys_siglist isascii
 cc-check-functions syslog opendir readlink sleep usleep pipe getaddrinfo utimes
+cc-check-functions shutdown socketpair isinf isnan link symlink
+
 if {[cc-check-functions sysinfo]} {
     cc-with {-includes sys/sysinfo.h} {
         cc-check-members "struct sysinfo.uptime"
@@ -114,12 +133,6 @@ switch -glob -- $host_os {
         define TCL_PLATFORM_PLATFORM unix
         define TCL_PLATFORM_PATH_SEPARATOR :
     }
-}
-
-if {[have-feature windows]} {
-    define LIBSOEXT dll
-} else {
-    define LIBSOEXT so
 }
 
 # Find some tools
@@ -187,7 +200,10 @@ if {[opt-bool shared with-jim-shared]} {
     msg-result "Building static library"
     define JIM_STATICLIB
 }
+define LIBSOEXT [format [get-define SH_SOEXTVER] [format %.2f [expr {[get-define JIM_VERSION] / 100.0}]]]
 define JIM_INSTALL [opt-bool install-jim]
+define JIM_DOCS [opt-bool docs]
+define JIM_RANDOMISE_HASH [opt-bool random-hash]
 
 # Attributes of the extensions
 # tcl=Pure Tcl extension
@@ -331,7 +347,10 @@ define C_EXT_SHOBJS [suffix .so $extinfo(module-c)]
 define TCL_EXTS [suffix .tcl $extinfo(module-tcl)]
 define EXTRA_OBJS $extra_objs
 
-make-config-header jim-config.h -auto {HAVE_LONG_LONG* JIM_UTF8} -none *
+# Restore the user-specified LIBS
+define LIBS $LIBS
+
+make-config-header jim-config.h -auto {HAVE_LONG_LONG* JIM_UTF8} -bare JIM_VERSION -none *
 make-config-header jimautoconf.h -auto {jim_ext_* TCL_PLATFORM_* TCL_LIBRARY USE_* JIM_* _FILE_OFFSET*}
 make-template Makefile.in
 make-template build-jim-ext.in

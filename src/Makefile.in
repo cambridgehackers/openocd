@@ -121,7 +121,7 @@ libopenocd_la_DEPENDENCIES = $(top_builddir)/src/xsvf/libxsvf.la \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
 am_libopenocd_la_OBJECTS = libopenocd_la-hello.lo \
-	libopenocd_la-openocd.lo libopenocd_la-startup_tcl.lo
+	libopenocd_la-openocd.lo
 libopenocd_la_OBJECTS = $(am_libopenocd_la_OBJECTS)
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
@@ -251,9 +251,7 @@ AUTOMAKE = @AUTOMAKE@
 AWK = @AWK@
 CC = @CC@
 CCDEPMODE = @CCDEPMODE@
-CC_FOR_BUILD = @CC_FOR_BUILD@
 CFLAGS = @CFLAGS@
-CFLAGS_FOR_BUILD = @CFLAGS_FOR_BUILD@
 CPP = @CPP@
 CPPFLAGS = @CPPFLAGS@
 CYGPATH_W = @CYGPATH_W@
@@ -267,7 +265,6 @@ ECHO_N = @ECHO_N@
 ECHO_T = @ECHO_T@
 EGREP = @EGREP@
 EXEEXT = @EXEEXT@
-EXEEXT_FOR_BUILD = @EXEEXT_FOR_BUILD@
 FGREP = @FGREP@
 GREP = @GREP@
 HIDAPI_CFLAGS = @HIDAPI_CFLAGS@
@@ -397,8 +394,7 @@ openocd_LDADD = libopenocd.la $(am__append_2) $(am__append_3) \
 	$(am__append_4)
 libopenocd_la_SOURCES = \
 	hello.c \
-	openocd.c \
-	startup_tcl.c
+	openocd.c
 
 noinst_HEADERS = \
 	hello.h \
@@ -425,7 +421,7 @@ libopenocd_la_LIBADD = \
 	$(top_builddir)/src/rtos/librtos.la \
 	$(top_builddir)/src/helper/libhelper.la \
 	$(LIBFTDI_LIBS) $(MINGWLDADD) \
-	$(HIDAPI_LIBS) $(LIBUSB1_LIBS) $(LIBUSB0_LIBS)
+	$(HIDAPI_LIBS) $(LIBUSB0_LIBS) $(LIBUSB1_LIBS)
 
 STARTUP_TCL_SRCS = \
 	$(srcdir)/helper/startup.tcl \
@@ -435,11 +431,11 @@ STARTUP_TCL_SRCS = \
 	$(srcdir)/server/startup.tcl
 
 EXTRA_DIST = $(STARTUP_TCL_SRCS)
-BUILT_SOURCES = startup.tcl
-BIN2C = $(top_builddir)/src/helper/bin2char$(EXEEXT_FOR_BUILD)
+BUILT_SOURCES = startup_tcl.inc
+BIN2C = $(top_srcdir)/src/helper/bin2char.sh
 
-# add startup_tcl.c to make clean list
-CLEANFILES = startup.tcl startup_tcl.c
+# add generated files to make clean list
+CLEANFILES = startup.tcl startup_tcl.inc
 MAINTAINERCLEANFILES = $(srcdir)/Makefile.in
 all: $(BUILT_SOURCES)
 	$(MAKE) $(AM_MAKEFLAGS) all-recursive
@@ -553,7 +549,6 @@ distclean-compile:
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libopenocd_la-hello.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libopenocd_la-openocd.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libopenocd_la-startup_tcl.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/main.Po@am__quote@
 
 .c.o:
@@ -593,13 +588,6 @@ libopenocd_la-openocd.lo: openocd.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='openocd.c' object='libopenocd_la-openocd.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libopenocd_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libopenocd_la-openocd.lo `test -f 'openocd.c' || echo '$(srcdir)/'`openocd.c
-
-libopenocd_la-startup_tcl.lo: startup_tcl.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libopenocd_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libopenocd_la-startup_tcl.lo -MD -MP -MF $(DEPDIR)/libopenocd_la-startup_tcl.Tpo -c -o libopenocd_la-startup_tcl.lo `test -f 'startup_tcl.c' || echo '$(srcdir)/'`startup_tcl.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libopenocd_la-startup_tcl.Tpo $(DEPDIR)/libopenocd_la-startup_tcl.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='startup_tcl.c' object='libopenocd_la-startup_tcl.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libopenocd_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libopenocd_la-startup_tcl.lo `test -f 'startup_tcl.c' || echo '$(srcdir)/'`startup_tcl.c
 
 mostlyclean-libtool:
 	-rm -f *.lo
@@ -901,13 +889,13 @@ uninstall-am: uninstall-binPROGRAMS
 startup.tcl: $(STARTUP_TCL_SRCS)
 	cat $^ > $@
 
-# Convert .tcl to cfile
-startup_tcl.c: startup.tcl $(BIN2C)
-	$(BIN2C) openocd_startup_tcl < $< > $@ || rm -f $@
+# Convert .tcl to c-array
+startup_tcl.inc: startup.tcl $(BIN2C)
+	$(BIN2C) < $< > $@ || { rm -f $@; false; }
 
 # we do not want generated file in the dist
 dist-hook:
-	rm -f $(distdir)/startup_tcl.c
+	rm -f $(distdir)/startup_tcl.inc
 
 # The "quick" target builds executables & reinstalls the executables
 # Primary use: developer types to quicken the edit/compile/debug

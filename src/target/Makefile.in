@@ -103,32 +103,31 @@ am__libtarget_la_SOURCES_DIST = algorithm.c register.c image.c \
 	breakpoints.c target.c target_request.c testee.c smp.c \
 	arm_dpm.c arm_jtag.c arm_disassembler.c arm_simulator.c \
 	arm_semihosting.c arm_adi_v5.c adi_v5_jtag.c adi_v5_swd.c \
-	adi_v5_cmsis_dap.c embeddedice.c trace.c etb.c etm.c \
-	oocd_trace.c etm_dummy.c armv4_5.c armv4_5_mmu.c \
-	armv4_5_cache.c arm7_9_common.c arm7tdmi.c arm720t.c \
-	arm9tdmi.c arm920t.c arm966e.c arm946e.c arm926ejs.c \
-	feroceon.c arm11.c arm11_dbgtap.c armv7m.c cortex_m.c armv7a.c \
-	cortex_a.c fa526.c xscale.c avr32_ap7k.c avr32_jtag.c \
-	avr32_mem.c avr32_regs.c mips32.c mips_m4k.c mips32_pracc.c \
-	mips32_dmaacc.c mips_ejtag.c nds32.c nds32_reg.c nds32_cmd.c \
-	nds32_disassembler.c nds32_tlb.c nds32_v2.c nds32_v3_common.c \
-	nds32_v3.c nds32_v3m.c nds32_aice.c quark_x10xx.c lakemont.c \
-	x86_32_common.c avrt.c dsp563xx.c dsp563xx_once.c dsp5680xx.c \
-	hla_target.c
+	embeddedice.c trace.c etb.c etm.c oocd_trace.c etm_dummy.c \
+	armv4_5.c armv4_5_mmu.c armv4_5_cache.c arm7_9_common.c \
+	arm7tdmi.c arm720t.c arm9tdmi.c arm920t.c arm966e.c arm946e.c \
+	arm926ejs.c feroceon.c arm11.c arm11_dbgtap.c armv7m.c \
+	armv7m_trace.c cortex_m.c armv7a.c cortex_a.c fa526.c xscale.c \
+	avr32_ap7k.c avr32_jtag.c avr32_mem.c avr32_regs.c mips32.c \
+	mips_m4k.c mips32_pracc.c mips32_dmaacc.c mips_ejtag.c nds32.c \
+	nds32_reg.c nds32_cmd.c nds32_disassembler.c nds32_tlb.c \
+	nds32_v2.c nds32_v3_common.c nds32_v3.c nds32_v3m.c \
+	nds32_aice.c quark_x10xx.c lakemont.c x86_32_common.c avrt.c \
+	dsp563xx.c dsp563xx_once.c dsp5680xx.c hla_target.c
 am__objects_1 = algorithm.lo register.lo image.lo breakpoints.lo \
 	target.lo target_request.lo testee.lo smp.lo
 @OOCD_TRACE_TRUE@am__objects_2 = oocd_trace.lo
 am__objects_3 = arm_dpm.lo arm_jtag.lo arm_disassembler.lo \
 	arm_simulator.lo arm_semihosting.lo arm_adi_v5.lo \
-	adi_v5_jtag.lo adi_v5_swd.lo adi_v5_cmsis_dap.lo \
-	embeddedice.lo trace.lo etb.lo etm.lo $(am__objects_2) \
-	etm_dummy.lo
+	adi_v5_jtag.lo adi_v5_swd.lo embeddedice.lo trace.lo etb.lo \
+	etm.lo $(am__objects_2) etm_dummy.lo
 am__objects_4 = arm7_9_common.lo arm7tdmi.lo arm720t.lo arm9tdmi.lo \
 	arm920t.lo arm966e.lo arm946e.lo arm926ejs.lo feroceon.lo
 am__objects_5 = armv4_5.lo armv4_5_mmu.lo armv4_5_cache.lo \
 	$(am__objects_4)
 am__objects_6 = arm11.lo arm11_dbgtap.lo
-am__objects_7 = armv7m.lo cortex_m.lo armv7a.lo cortex_a.lo
+am__objects_7 = armv7m.lo armv7m_trace.lo cortex_m.lo armv7a.lo \
+	cortex_a.lo
 am__objects_8 = fa526.lo xscale.lo
 am__objects_9 = avr32_ap7k.lo avr32_jtag.lo avr32_mem.lo avr32_regs.lo
 am__objects_10 = mips32.lo mips_m4k.lo mips32_pracc.lo \
@@ -290,9 +289,7 @@ AUTOMAKE = @AUTOMAKE@
 AWK = @AWK@
 CC = @CC@
 CCDEPMODE = @CCDEPMODE@
-CC_FOR_BUILD = @CC_FOR_BUILD@
 CFLAGS = @CFLAGS@
-CFLAGS_FOR_BUILD = @CFLAGS_FOR_BUILD@
 CPP = @CPP@
 CPPFLAGS = @CPPFLAGS@
 CYGPATH_W = @CYGPATH_W@
@@ -306,7 +303,6 @@ ECHO_N = @ECHO_N@
 ECHO_T = @ECHO_T@
 EGREP = @EGREP@
 EXEEXT = @EXEEXT@
-EXEEXT_FOR_BUILD = @EXEEXT_FOR_BUILD@
 FGREP = @FGREP@
 GREP = @GREP@
 HIDAPI_CFLAGS = @HIDAPI_CFLAGS@
@@ -421,13 +417,13 @@ AM_CPPFLAGS = -I$(top_srcdir)/src -I$(top_builddir)/src \
 @OOCD_TRACE_TRUE@OOCD_TRACE_FILES = oocd_trace.c
 SUBDIRS = openrisc
 libtarget_la_LIBADD = $(top_builddir)/src/target/openrisc/libopenrisc.la
-BIN2C = $(top_builddir)/src/helper/bin2char$(EXEEXT_FOR_BUILD)
+BIN2C = $(top_srcdir)/src/helper/bin2char.sh
 DEBUG_HANDLER = $(srcdir)/xscale/debug_handler.bin
 EXTRA_DIST = \
 	startup.tcl \
 	$(wildcard $(srcdir)/xscale/*)
 
-DEBUG_HEADER = xscale_debug.h
+DEBUG_HEADER = xscale_debug.inc
 BUILT_SOURCES = $(DEBUG_HEADER)
 CLEANFILES = $(DEBUG_HEADER)
 METASOURCES = AUTO
@@ -486,6 +482,7 @@ ARMV6_SRC = \
 
 ARMV7_SRC = \
 	armv7m.c \
+	armv7m_trace.c \
 	cortex_m.c \
 	armv7a.c \
 	cortex_a.c
@@ -499,7 +496,6 @@ ARM_DEBUG_SRC = \
 	arm_adi_v5.c \
 	adi_v5_jtag.c \
 	adi_v5_swd.c \
-	adi_v5_cmsis_dap.c \
 	embeddedice.c \
 	trace.c \
 	etb.c \
@@ -562,6 +558,7 @@ noinst_HEADERS = \
 	armv4_5_cache.h \
 	armv7a.h \
 	armv7m.h \
+	armv7m_trace.h \
 	avrt.h \
 	dsp563xx.h \
 	dsp563xx_once.h \
@@ -667,7 +664,6 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/adi_v5_cmsis_dap.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/adi_v5_jtag.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/adi_v5_swd.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/algorithm.Plo@am__quote@
@@ -692,6 +688,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/armv4_5_mmu.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/armv7a.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/armv7m.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/armv7m_trace.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/avr32_ap7k.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/avr32_jtag.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/avr32_mem.Plo@am__quote@
@@ -1080,8 +1077,8 @@ uninstall-am: uninstall-nobase_dist_ocddataDATA
 	uninstall-nobase_dist_ocddataDATA
 
 
-$(DEBUG_HEADER): $(BIN2C) $(DEBUG_HANDLER)
-	$(BIN2C) < $(DEBUG_HANDLER) xscale_debug_handler > xscale_debug.h
+$(DEBUG_HEADER): $(DEBUG_HANDLER) $(BIN2C)
+	$(BIN2C) < $< > $@ || { rm -f $@; false; }
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

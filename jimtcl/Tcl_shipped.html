@@ -3,7 +3,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
 <head>
 <meta http-equiv="Content-Type" content="application/xhtml+xml; charset=UTF-8" />
-<meta name="generator" content="AsciiDoc 8.6.8" />
+<meta name="generator" content="AsciiDoc 8.6.9" />
 <title>Jim Tcl(n)</title>
 <style type="text/css">
 /* Shared CSS for AsciiDoc xhtml11 and html5 backends */
@@ -94,7 +94,9 @@ ul > li > * { color: black; }
   padding: 0;
   margin: 0;
 }
-
+pre {
+  white-space: pre-wrap;
+}
 
 #author {
   color: #527bbd;
@@ -223,7 +225,7 @@ div.exampleblock > div.content {
 }
 
 div.imageblock div.content { padding-left: 0; }
-span.image img { border-style: none; }
+span.image img { border-style: none; vertical-align: text-bottom; }
 a.image:visited { color: white; }
 
 dl {
@@ -736,7 +738,7 @@ Jim Tcl(n) Manual Page
 </h1>
 <h2>NAME</h2>
 <div class="sectionbody">
-<p>Jim Tcl v0.74 -
+<p>Jim Tcl v0.76 -
    reference manual for the Jim Tcl scripting language
 </p>
 </div>
@@ -876,11 +878,106 @@ Support for UDP, IPv6, Unix-Domain sockets in addition to TCP sockets
 <h2 id="_recent_changes">RECENT CHANGES</h2>
 <div class="sectionbody">
 <div class="sect2">
+<h3 id="_changes_between_0_75_and_0_76">Changes between 0.75 and 0.76</h3>
+<div class="olist arabic"><ol class="arabic">
+<li>
+<p>
+Add support for <a href="#_file"><strong><code>file</code></strong></a> <code>link</code>
+</p>
+</li>
+<li>
+<p>
+<a href="#_glob"><strong><code>glob</code></strong></a> now supports the <em>--tails</em> option
+</p>
+</li>
+<li>
+<p>
+Add support for <a href="#_string"><strong><code>string</code></strong></a> <code>cat</code>
+</p>
+</li>
+<li>
+<p>
+Allow <a href="#_info"><strong><code>info</code></strong></a> <code>source</code> to add source info
+</p>
+</li>
+</ol></div>
+</div>
+<div class="sect2">
+<h3 id="_changes_between_0_74_and_0_75">Changes between 0.74 and 0.75</h3>
+<div class="olist arabic"><ol class="arabic">
+<li>
+<p>
+<a href="#_binary"><strong><code>binary</code></strong></a>, <a href="#cmd_3"><strong><code>pack</code></strong></a> and <a href="#cmd_3"><strong><code>unpack</code></strong></a> now support floating point
+</p>
+</li>
+<li>
+<p>
+<a href="#_file"><strong><code>file</code></strong></a> <code>copy</code> <em>-force</em> handles source and target as the same file
+</p>
+</li>
+<li>
+<p>
+<a href="#_format"><strong><code>format</code></strong></a> now supports <code>%b</code> for binary conversion
+</p>
+</li>
+<li>
+<p>
+<a href="#_lsort"><strong><code>lsort</code></strong></a> now supports <em>-unique</em> and <em>-real</em>
+</p>
+</li>
+<li>
+<p>
+Add support for half-close with <a href="#_aio"><strong><code>aio</code></strong></a> <code>close</code> ?r|w?
+</p>
+</li>
+<li>
+<p>
+Add <a href="#_socket"><strong><code>socket</code></strong></a> <code>pair</code> for a bidirectional pipe
+</p>
+</li>
+<li>
+<p>
+Add <em>--random-hash</em> to randomise hash tables for greater security
+</p>
+</li>
+<li>
+<p>
+<a href="#_dict"><strong><code>dict</code></strong></a> now supports <em>for</em>, <em>values</em>, <em>incr</em>, <em>append</em>, <em>lappend</em>, <em>update</em>, <em>info</em> and <em>replace</em>
+</p>
+</li>
+<li>
+<p>
+<a href="#_file"><strong><code>file</code></strong></a> <code>stat</code> no longer requires the variable name
+</p>
+</li>
+</ol></div>
+</div>
+<div class="sect2">
 <h3 id="_changes_between_0_73_and_0_74">Changes between 0.73 and 0.74</h3>
 <div class="olist arabic"><ol class="arabic">
 <li>
 <p>
 Numbers with leading zeros are treated as decimal, not octal
+</p>
+</li>
+<li>
+<p>
+Add <a href="#_aio"><strong><code>aio</code></strong></a> <code>isatty</code>
+</p>
+</li>
+<li>
+<p>
+Add LFS (64 bit) support for <a href="#_aio"><strong><code>aio</code></strong></a> <code>seek</code>, <a href="#_aio"><strong><code>aio</code></strong></a> <code>tell</code>, <a href="#_aio"><strong><code>aio</code></strong></a> <code>copyto</code>, <a href="#_file"><strong><code>file</code></strong></a> <code>copy</code>
+</p>
+</li>
+<li>
+<p>
+<a href="#_string"><strong><code>string</code></strong></a> <code>compare</code> and <a href="#_string"><strong><code>string</code></strong></a> <code>equal</code> now support <em>-length</em>
+</p>
+</li>
+<li>
+<p>
+<a href="#_glob"><strong><code>glob</code></strong></a> now supports <em>-directory</em>
 </p>
 </li>
 </ol></div>
@@ -2265,12 +2362,13 @@ Extended Regular Expressions (<code>ERE</code>) rather than Basic Regular Expres
 See REG_EXTENDED in the documentation.</p></div>
 <div class="paragraph"><p>Using the system-supported POSIX regular expressions will typically
 make for the smallest code size, but some features such as UTF-8
-and <code>\w</code>, <code>\d</code>, <code>\s</code> are not supported.</p></div>
+and <code>\w</code>, <code>\d</code>, <code>\s</code> are not supported, and null characters
+in strings are not supported.</p></div>
 <div class="paragraph"><p>See regex(3) and regex(7) for full details.</p></div>
 </div>
 <div class="sect2">
 <h3 id="_jim_built_in_regular_expressions">Jim built-in Regular Expressions</h3>
-<div class="paragraph"><p>The Jim built-in regulare expression engine may be selected with <code>./configure --with-jim-regexp</code>
+<div class="paragraph"><p>The Jim built-in regular expression engine may be selected with <code>./configure --with-jim-regexp</code>
 or it will be selected automatically if UTF-8 support is enabled.</p></div>
 <div class="paragraph"><p>This engine supports UTF-8 as well as some <code>ARE</code> features. The differences with both Tcl 7.x/8.x
 and POSIX are highlighted below.</p></div>
@@ -2313,6 +2411,11 @@ Support for the <code>?</code> non-greedy quantifier. e.g. <code>*?</code>
 <li>
 <p>
 Support for non-capuring parentheses <code>(?:&#8230;)</code>
+</p>
+</li>
+<li>
+<p>
+Jim Tcl considers that both patterns and strings end at a null character (<code>\x00</code>)
 </p>
 </li>
 </ol></div>
@@ -3629,6 +3732,7 @@ command.  The legal <code><em>options</em></code> are:</p></div>
 </p>
 </dd>
 </dl></div>
+<div class="paragraph"><p><code><strong>dict for, values, incr, append, lappend, update, info, replace</strong></code> to be documented&#8230;</p></div>
 </div>
 <div class="sect2">
 <h3 id="_env">env</h3>
@@ -3960,14 +4064,15 @@ abbreviation for <code><em>option</em></code> is acceptable.  The valid options 
 </p>
 </dd>
 <dt class="hdlist1">
-<code><strong>file delete ?-force?</strong> <em>name...</em></code>
+<code><strong>file delete ?-force? ?--?</strong> <em>name...</em></code>
 </dt>
 <dd>
 <p>
     Deletes file or directory <code><em>name</em></code>. If the file or directory doesn&#8217;t exist, nothing happens.
     If it can&#8217;t be deleted, an error is generated. Non-empty directories will not be deleted
     unless the <code>-force</code> options is given. In this case no errors will be generated, even
-    if the file/directory can&#8217;t be deleted.
+    if the file/directory can&#8217;t be deleted. Use <code><em>--</em></code> if there is any possibility of
+        the first name being <code><em>-force</em></code>.
 </p>
 </dd>
 <dt class="hdlist1">
@@ -4035,6 +4140,17 @@ abbreviation for <code><em>option</em></code> is acceptable.  The valid options 
     Joins multiple path components. Note that if any components is
     an absolute path, the preceding components are ignored.
     Thus <code>"<a href="#_file"><strong><code>file</code></strong></a> join /tmp /root"</code> returns <code>"/root"</code>.
+</p>
+</dd>
+<dt class="hdlist1">
+<code><strong>file link</strong> ?<strong>-hard|-symbolic</strong>? <em>newname target</em></code>
+</dt>
+<dd>
+<p>
+    Creates a hard link (default) or symbolic link from <code><em>newname</em></code> to <code><em>target</em></code>.
+        Note that the sense of this command is the opposite of <a href="#_file"><strong><code>file</code></strong></a> <code>rename</code> and <a href="#_file"><strong><code>file</code></strong></a> <code>copy</code>
+        and also of <code>ln</code>, but this is compatible with Tcl.
+    An error is returned if <code><em>target</em></code> doesn&#8217;t exist or <code><em>newname</em></code> already exists.
 </p>
 </dd>
 <dt class="hdlist1">
@@ -4116,11 +4232,13 @@ abbreviation for <code><em>option</em></code> is acceptable.  The valid options 
 </p>
 </dd>
 <dt class="hdlist1">
-<code><strong>file rename</strong> <em>oldname</em> <em>newname</em></code>
+<code><strong>file rename</strong> ?<strong>-force</strong>? <em>oldname</em> <em>newname</em></code>
 </dt>
 <dd>
 <p>
     Renames the file from the old name to the new name.
+        If <code><em>newname</em></code> already exists, an error is returned unless <code><em>-force</em></code> is
+        specified.
 </p>
 </dd>
 <dt class="hdlist1">
@@ -4144,15 +4262,12 @@ abbreviation for <code><em>option</em></code> is acceptable.  The valid options 
 </p>
 </dd>
 <dt class="hdlist1">
-<code><strong>file stat</strong> <em>name varName</em></code>
+<code><strong>file stat</strong> <em>name ?varName?</em></code>
 </dt>
 <dd>
 <p>
-    Invoke the <em>stat</em> kernel call on <code><em>name</em></code>, and use the
-    variable given by <code><em>varName</em></code> to hold information returned from
-    the kernel call.
-    <code><em>varName</em></code> is treated as an array variable,
-    and the following elements of that variable are set: <em>atime</em>,
+    Invoke the <em>stat</em> kernel call on <code><em>name</em></code>, and return the result
+        as a dictionary with the following keys: <em>atime</em>,
     <em>ctime</em>, <em>dev</em>, <em>gid</em>, <em>ino</em>, <em>mode</em>, <em>mtime</em>,
     <em>nlink</em>, <em>size</em>, <em>type</em>, <em>uid</em>.
     Each element except <em>type</em> is a decimal string with the value of
@@ -4160,7 +4275,8 @@ abbreviation for <code><em>option</em></code> is acceptable.  The valid options 
     manual entry for <em>stat</em> for details on the meanings of the values.
     The <em>type</em> element gives the type of the file in the same form
     returned by the command <a href="#_file"><strong><code>file</code></strong></a> <code>type</code>.
-    This command returns an empty string.
+        If <code><em>varName</em></code> is specified, it is taken to be the name of an array
+        variable and the values are also stored into the array.
 </p>
 </dd>
 <dt class="hdlist1">
@@ -4291,7 +4407,8 @@ converts each argument to the correct type (floating, integer, etc.)
 before passing it to <em>sprintf</em> for formatting.</p></div>
 <div class="paragraph"><p>The only unusual conversion is for <code>%c</code>; in this case the argument
 must be a decimal string, which will then be converted to the corresponding
-ASCII character value.</p></div>
+ASCII (or UTF-8) character value.</p></div>
+<div class="paragraph"><p>In addition, Jim Tcl provides basic support for conversion to binary with <code>%b</code>.</p></div>
 <div class="paragraph"><p><a href="#_format"><strong><code>format</code></strong></a> does backslash substitution on its <code><em>formatString</em></code>
 argument, so backslash sequences in <code><em>formatString</em></code> will be handled
 correctly even if the argument is in braces.</p></div>
@@ -4331,13 +4448,19 @@ for reading.</p></div>
 </div>
 <div class="sect2">
 <h3 id="_glob">glob</h3>
-<div class="paragraph"><p><code><strong>glob</strong> ?<strong>-nocomplain</strong>? <em>pattern ?pattern ...?</em></code></p></div>
+<div class="paragraph"><p><code><strong>glob</strong> ?<strong>-nocomplain</strong>? ?<strong>-directory</strong> <em>dir</em>? ?<strong>-tails</strong>? ?<strong>--</strong>? <em>pattern ?pattern ...?</em></code></p></div>
 <div class="paragraph"><p>This command performs filename globbing, using csh rules.  The returned
 value from <a href="#_glob"><strong><code>glob</code></strong></a> is the list of expanded filenames.</p></div>
 <div class="paragraph"><p>If <code>-nocomplain</code> is specified as the first argument then an empty
 list may be returned;  otherwise an error is returned if the expanded
 list is empty.  The <code>-nocomplain</code> argument must be provided
 exactly: an abbreviation will not be accepted.</p></div>
+<div class="paragraph"><p>If <code>-directory</code> is given, the <code><em>dir</em></code> is understood to contain a
+directory name to search in. This allows globbing inside directories
+whose names may contain glob-sensitive characters. The returned names
+include the directory name unless <code><em>-tails</em></code> is specified.</p></div>
+<div class="paragraph"><p>If <code><em>-tails</em></code> is specified, along with <code>-directory</code>, the returned names
+are relative to the given directory.</p></div>
 </div>
 <div class="sect2">
 <h3 id="_global">global</h3>
@@ -4589,13 +4712,15 @@ The legal <code><em>option</em></code>'s (which may be abbreviated) are:
 </p>
 </dd>
 <dt class="hdlist1">
-<code><strong>info source</strong> <em>script</em></code>
+<code><strong>info source</strong> <em>script ?filename line?</em></code>
 </dt>
 <dd>
 <p>
-    Returns the original source location of the given script as a list of
+    With a single argument, returns the original source location of the given script as a list of
     <code>{filename linenumber}</code>. If the source location can&#8217;t be determined, the
-    list <code>{{} 0}</code> is returned.
+    list <code>{{} 0}</code> is returned. If <code><em>filename</em></code> and <code><em>line</em></code> are given, returns a copy
+        of <code><em>script</em></code> with the associate source information. This can be useful to produce
+        useful messages from <a href="#_eval"><strong><code>eval</code></strong></a>, etc. if the original source information may be lost.
 </p>
 </dd>
 <dt class="hdlist1">
@@ -4791,15 +4916,19 @@ affect the loop count.</p></div>
 </div>
 <div class="sect2">
 <h3 id="_lindex">lindex</h3>
-<div class="paragraph"><p><code><strong>lindex</strong> <em>list index</em></code></p></div>
+<div class="paragraph"><p><code><strong>lindex</strong> <em>list ?index &#8230;?</em></code></p></div>
 <div class="paragraph"><p>Treats <code><em>list</em></code> as a Tcl list and returns element <code><em>index</em></code> from it
 (0 refers to the first element of the list).
 See STRING AND LIST INDEX SPECIFICATIONS for all allowed forms for <code><em>index</em></code>.</p></div>
 <div class="paragraph"><p>In extracting the element, <code><em>lindex</em></code> observes the same rules concerning
 braces and quotes and backslashes as the Tcl command interpreter; however,
 variable substitution and command substitution do not occur.</p></div>
+<div class="paragraph"><p>If no index values are given, simply returns <code><em>list</em></code></p></div>
 <div class="paragraph"><p>If <code><em>index</em></code> is negative or greater than or equal to the number of elements
-in <code><em>value</em></code>, then an empty string is returned.</p></div>
+in <code><em>list</em></code>, then an empty string is returned.</p></div>
+<div class="paragraph"><p>If additional index arguments are supplied, then each argument is
+used in turn to select an element from the previous indexing
+operation, allowing the script to select elements from sublists.</p></div>
 </div>
 <div class="sect2">
 <h3 id="_linsert">linsert</h3>
@@ -5072,10 +5201,12 @@ the list are to be matched against pattern and must have one of the values below
 </div>
 <div class="sect2">
 <h3 id="_lsort">lsort</h3>
-<div class="paragraph"><p><code><strong>lsort</strong> ?<strong>-index</strong> <em>listindex</em>? ?<strong>-integer</strong>|<strong>-command</strong> <em>cmdname</em>? ?<strong>-decreasing</strong>|<strong>-increasing</strong>? <em>list</em></code></p></div>
+<div class="paragraph"><p><code><strong>lsort</strong> ?<strong>-index</strong> <em>listindex</em>? ?<strong>-nocase!-integer|-real|-command</strong> <em>cmdname</em>? ?<strong>-unique</strong>? ?<strong>-decreasing</strong>|<strong>-increasing</strong>? <em>list</em></code></p></div>
 <div class="paragraph"><p>Sort the elements of <code><em>list</em></code>, returning a new list in sorted order.
-By default, ASCII sorting is used, with the result in increasing order.</p></div>
+By default, ASCII (or UTF-8) sorting is used, with the result in increasing order.</p></div>
+<div class="paragraph"><p>If <code>-nocase</code> is specified, comparisons are case-insenstive.</p></div>
 <div class="paragraph"><p>If <code>-integer</code> is specified, numeric sorting is used.</p></div>
+<div class="paragraph"><p>If <code>-real</code> is specified, floating point number sorting is used.</p></div>
 <div class="paragraph"><p>If <code>-command <em>cmdname</em></code> is specified, <code><em>cmdname</em></code> is treated as a command
 name. For each comparison, <code><em>cmdname $value1 $value2</code></em> is called which
 should compare the values and return an integer less than, equal
@@ -5083,9 +5214,9 @@ to, or greater than zero if the <code><em>$value1</em></code> is to be considere
 than, equal to, or greater than <code><em>$value2</em></code>, respectively.</p></div>
 <div class="paragraph"><p>If <code>-decreasing</code> is specified, the resulting list is in the opposite
 order to what it would be otherwise. <code>-increasing</code> is the default.</p></div>
-<div class="paragraph"><p>If <code>-index <em>listindex</em></code> is specified, each element of the list is treated as a list and
-the given index is extracted from the list for comparison. The list index may
-be any valid list index, such as <code>1</code>, <code>end</code> or <code>end-2</code>.</p></div>
+<div class="paragraph"><p>If <code>-unique</code> is specified, then only the last set of duplicate elements found in the list will be retained.
+Note that duplicates are determined relative to the comparison used in the sort. Thus if <code>-index 0</code> is used,
+<code>{1 a}</code> and <code>{1 b}</code> would be considered duplicates and only the second element, <code>{1 b}</code>, would be retained.</p></div>
 <div class="paragraph"><p>If <code>-index <em>listindex</em></code> is specified, each element of the list is treated as a list and
 the given index is extracted from the list for comparison. The list index may
 be any valid list index, such as <code>1</code>, <code>end</code> or <code>end-2</code>.</p></div>
@@ -5793,6 +5924,14 @@ The legal options (which may be abbreviated) are:</p></div>
 <p>
     Like <a href="#_string"><strong><code>string</code></strong></a> <code>range</code> except works on bytes rather than characters.
     These commands are identical if UTF-8 support is not enabled.
+</p>
+</dd>
+<dt class="hdlist1">
+<code><strong>string cat</strong> <em>?string1 string2 ...?</em></code>
+</dt>
+<dd>
+<p>
+    Concatenates the given strings into a single string.
 </p>
 </dd>
 <dt class="hdlist1">
@@ -6726,27 +6865,30 @@ uid 1000 euid 1000 gid 100 egid 100</code></pre>
 <h3 id="_aio">aio</h3>
 <div class="dlist"><dl>
 <dt class="hdlist1">
-<code>$handle <strong>read ?-nonewline?</strong> <em>?len?</em></code>
+<code>$handle <strong>accept</strong> ?addrvar?</code>
 </dt>
 <dd>
 <p>
-    Read and return bytes from the stream. To eof if no len.
+    Server socket only: Accept a connection and return stream.
+    If <code><em>addrvar</em></code> is specified, the address of the connected client is stored
+    in the named variable in the form <em>addr:port</em>. See <a href="#_socket"><strong><code>socket</code></strong></a> for details.
 </p>
 </dd>
 <dt class="hdlist1">
-<code>$handle <strong>gets</strong> <em>?var?</em></code>
+<code>$handle <strong>buffering none|line|full</strong></code>
 </dt>
 <dd>
 <p>
-    Read one line and return it or store it in the var
+    Sets the buffering mode of the stream.
 </p>
 </dd>
 <dt class="hdlist1">
-<code>$handle <strong>puts ?-nonewline?</strong> <em>str</em></code>
+<code>$handle <strong>close</strong> ?r(ead)|w(rite)?</code>
 </dt>
 <dd>
 <p>
-    Write the string, with newline unless -nonewline
+    Closes the stream.
+        The  two-argument form is a "half-close" on a socket. See the <code>shutdown(2)</code> man page.
 </p>
 </dd>
 <dt class="hdlist1">
@@ -6760,11 +6902,11 @@ uid 1000 euid 1000 gid 100 egid 100</code></pre>
 </p>
 </dd>
 <dt class="hdlist1">
-<code>$handle <strong>flush</strong></code>
+<code>$handle <strong>eof</strong></code>
 </dt>
 <dd>
 <p>
-    Flush the stream
+    Returns 1 if stream is at eof
 </p>
 </dd>
 <dt class="hdlist1">
@@ -6777,45 +6919,27 @@ uid 1000 euid 1000 gid 100 egid 100</code></pre>
 </p>
 </dd>
 <dt class="hdlist1">
-<code>$handle <strong>eof</strong></code>
+<code>$handle <strong>flush</strong></code>
 </dt>
 <dd>
 <p>
-    Returns 1 if stream is at eof
+    Flush the stream
 </p>
 </dd>
 <dt class="hdlist1">
-<code>$handle <strong>close</strong></code>
+<code>$handle <strong>gets</strong> <em>?var?</em></code>
 </dt>
 <dd>
 <p>
-    Closes the stream
+    Read one line and return it or store it in the var
 </p>
 </dd>
 <dt class="hdlist1">
-<code>$handle <strong>seek</strong> <em>offset</em> <strong>?start|current|end?</strong></code>
+<code>$handle <strong>isatty</strong></code>
 </dt>
 <dd>
 <p>
-    Seeks in the stream (default <em>current</em>)
-</p>
-</dd>
-<dt class="hdlist1">
-<code>$handle <strong>tell</strong></code>
-</dt>
-<dd>
-<p>
-    Returns the current seek position
-</p>
-</dd>
-<dt class="hdlist1">
-<code>$handle <strong>filename</strong></code>
-</dt>
-<dd>
-<p>
-    Returns the original filename used when opening the file.
-    If the handle was returned from <a href="#_socket"><strong><code>socket</code></strong></a>, the type of the
-    handle is returned instead.
+    Returns 1 if the stream is a tty device.
 </p>
 </dd>
 <dt class="hdlist1">
@@ -6829,30 +6953,19 @@ uid 1000 euid 1000 gid 100 egid 100</code></pre>
 </p>
 </dd>
 <dt class="hdlist1">
-<code>$handle <strong>buffering none|line|full</strong></code>
+<code>$handle <strong>puts ?-nonewline?</strong> <em>str</em></code>
 </dt>
 <dd>
 <p>
-    Sets the buffering mode of the stream.
+    Write the string, with newline unless -nonewline
 </p>
 </dd>
 <dt class="hdlist1">
-<code>$handle <strong>accept</strong></code>
+<code>$handle <strong>read ?-nonewline?</strong> <em>?len?</em></code>
 </dt>
 <dd>
 <p>
-    Server socket only: Accept a connection and return stream
-</p>
-</dd>
-<dt class="hdlist1">
-<code>$handle <strong>sendto</strong> <em>str ?hostname:?port</em></code>
-</dt>
-<dd>
-<p>
-    Sends the string, <code><em>str</em></code>, to the given address via the socket using sendto(2).
-    This is intended for udp sockets and may give an error or behave in unintended
-    ways for other handle types.
-    Returns the number of bytes written.
+    Read and return bytes from the stream. To eof if no len.
 </p>
 </dd>
 <dt class="hdlist1">
@@ -6864,6 +6977,33 @@ uid 1000 euid 1000 gid 100 egid 100</code></pre>
     At most <code><em>maxlen</em></code> bytes are read.
     If <code><em>addrvar</em></code> is specified, the sending address of the message is stored in
     the named variable in the form <em>addr:port</em>. See <a href="#_socket"><strong><code>socket</code></strong></a> for details.
+</p>
+</dd>
+<dt class="hdlist1">
+<code>$handle <strong>seek</strong> <em>offset</em> <strong>?start|current|end?</strong></code>
+</dt>
+<dd>
+<p>
+    Seeks in the stream (default <em>current</em>)
+</p>
+</dd>
+<dt class="hdlist1">
+<code>$handle <strong>sendto</strong> <em>str ?addr:?port</em></code>
+</dt>
+<dd>
+<p>
+    Sends the string, <code><em>str</em></code>, to the given address via the socket using sendto(2).
+    This is intended for udp/dgram sockets and may give an error or behave in unintended
+    ways for other handle types.
+    Returns the number of bytes written.
+</p>
+</dd>
+<dt class="hdlist1">
+<code>$handle <strong>tell</strong></code>
+</dt>
+<dd>
+<p>
+    Returns the current seek position
 </p>
 </dd>
 </dl></div>
@@ -7013,16 +7153,18 @@ handler is removed.</p></div>
 </dl></div>
 <div class="paragraph"><p>Scripts are executed at the global scope. If an error occurs during a handler script,
 an attempt is made to call (the user-defined command) <code>bgerror</code> with the details of the error.
-If the <code>bgerror</code> commands does not exist, it is printed to stderr instead.</p></div>
+If the <code>bgerror</code> command does not exist, the error message details are printed to stderr instead.</p></div>
 <div class="paragraph"><p>If a file event handler script generates an error, the handler is automatically removed
 to prevent infinite errors. (A time event handler is always removed after execution).</p></div>
 <div class="dlist"><dl>
 <dt class="hdlist1">
-<code><strong>bgerror</strong> <em>error</em></code>
+<code><strong>bgerror</strong> <em>msg</em></code>
 </dt>
 <dd>
 <p>
-    Called when an event handler script generates an error.
+    Called when an event handler script generates an error. Note that the normal command resolution
+        rules are used for bgerror. First the name is resolved in the current namespace, then in the
+        global scope.
 </p>
 </dd>
 </dl></div>
@@ -7052,7 +7194,7 @@ to prevent infinite errors. (A time event handler is always removed after execut
 </dt>
 <dd>
 <p>
-    A TCP socket client.
+    A TCP socket client. (See the forms for <code><em>addr</em></code> below)
 </p>
 </dd>
 <dt class="hdlist1">
@@ -7088,6 +7230,15 @@ to prevent infinite errors. (A time event handler is always removed after execut
 <p>
     A pipe. Note that unlike all other socket types, this command returns
     a list of two channels: {read write}
+</p>
+</dd>
+<dt class="hdlist1">
+<code><strong>socket pair</strong></code>
+</dt>
+<dd>
+<p>
+    A socketpair (see socketpair(2)). Like <a href="#_socket"><strong><code>socket</code></strong></a> <code>pipe</code>, this command returns
+    a list of two channels: {s1 s2}. These channels are both readable and writable.
 </p>
 </dd>
 </dl></div>
@@ -7211,29 +7362,30 @@ uucp, local0-local7</code></pre>
 <div class="paragraph"><p>The optional <em>pack</em> extension provides commands to encode and decode binary strings.</p></div>
 <div class="dlist"><dl>
 <dt class="hdlist1">
-<code><strong>pack</strong> <em>varName value</em> <strong>-intle|-intbe|-str</strong> <em>bitwidth ?bitoffset?</em></code>
+<code><strong>pack</strong> <em>varName value</em> <strong>-intle|-intbe|-floatle|-floatbe|-str</strong> <em>bitwidth ?bitoffset?</em></code>
 </dt>
 <dd>
 <p>
     Packs the binary representation of <code><em>value</em></code> into the variable
     <code><em>varName</em></code>. The value is packed according to the given type
-    (integer/string, big-endian/little-endian), width and bit offset.
+    (integer/floating point/string, big-endian/little-endian), width and bit offset.
     The variable is created if necessary (like <a href="#_append"><strong><code>append</code></strong></a>).
     Ihe variable is expanded if necessary.
 </p>
 </dd>
 <dt class="hdlist1">
-<code><strong>unpack</strong> <em>binvalue</em> <strong>-intbe|-intle|-uintbe|-uintle|-str</strong> <em>bitpos bitwidth</em></code>
+<code><strong>unpack</strong> <em>binvalue</em> <strong>-intbe|-intle|-uintbe|-uintle|-floatbe|-floatle|-str</strong> <em>bitpos bitwidth</em></code>
 </dt>
 <dd>
 <p>
     Unpacks bits from <code><em>binvalue</em></code> at bit position <code><em>bitpos</em></code> and with <code><em>bitwidth</em></code>.
-    Interprets the value according to the type (integer/string, big-endian/little-endian
+    Interprets the value according to the type (integer/floating point/string, big-endian/little-endian
     and signed/unsigned) and returns it. For integer types, <code><em>bitwidth</em></code>
-    may be up to the size of a Jim Tcl integer (typically 64 bits). For the string type,
-    both the width and the offset must be on a byte boundary (multiple of 8). Attempting to
-    access outside the length of the value will return 0 for integer types or the empty string
-    for the string type.
+    may be up to the size of a Jim Tcl integer (typically 64 bits). For floating point types,
+    <code><em>bitwidth</em></code> may be 32 bits (for single precision numbers) or 64 bits (for double precision).
+    For the string type, both the width and the offset must be on a byte boundary (multiple of 8). Attempting to
+    access outside the length of the value will return 0 for integer types, 0.0 for floating point types
+    or the empty string for the string type.
 </p>
 </dd>
 </dl></div>
@@ -7243,12 +7395,13 @@ uucp, local0-local7</code></pre>
 <div class="paragraph"><p>The optional, pure-Tcl <em>binary</em> extension provides the Tcl-compatible <a href="#_binary"><strong><code>binary</code></strong></a> <code>scan</code> and <a href="#_binary"><strong><code>binary</code></strong></a> <code>format</code>
 commands based on the low-level <a href="#cmd_3"><strong><code>pack</code></strong></a> and <a href="#cmd_3"><strong><code>unpack</code></strong></a> commands.</p></div>
 <div class="paragraph"><p>See the Tcl documentation at: <a href="http://www.tcl.tk/man/tcl8.5/TclCmd/binary.htm">http://www.tcl.tk/man/tcl8.5/TclCmd/binary.htm</a></p></div>
-<div class="paragraph"><p>Note that packing and unpacking of floating point values is not supported.</p></div>
+<div class="paragraph"><p>Note that <em>binary format</em> with f/r/R specifiers (single-precision float) uses the value of Infinity
+ in case of overflow.</p></div>
 </div>
 <div class="sect2">
 <h3 id="cmd_4">oo: class, super</h3>
 <div class="paragraph"><p>The optional, pure-Tcl <em>oo</em> extension provides object-oriented (OO) support for Jim Tcl.</p></div>
-<div class="paragraph"><p>See the online documentation (<a href="http://jim.berlios.de/documentation/oo/">http://jim.berlios.de/documentation/oo/</a>) for more details.</p></div>
+<div class="paragraph"><p>See the online documentation (<a href="http://jim.tcl.tk/index.html/doc/www/www/documentation/oo/">http://jim.tcl.tk/index.html/doc/www/www/documentation/oo/</a>) for more details.</p></div>
 <div class="dlist"><dl>
 <dt class="hdlist1">
 <code><strong>class</strong> <em>classname ?baseclasses? classvars</em></code>
@@ -7728,7 +7881,7 @@ tcl_platform(pathSeparator) = :</code></pre>
 </p>
 </dd>
 <dt class="hdlist1">
-<code><strong>jim_argv0</strong></code>
+<code><strong>jim::argv0</strong></code>
 </dt>
 <dd>
 <p>
@@ -8071,7 +8224,7 @@ official policies, either expressed or implied, of the Jim Tcl Project.</code></
 <div id="footnotes"><hr /></div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2012-09-11 11:21:08 EST
+Last updated 2015-01-31 14:05:26 AEST
 </div>
 </div>
 </body>

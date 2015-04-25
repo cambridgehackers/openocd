@@ -97,7 +97,7 @@ CONFIG_CLEAN_VPATH_FILES =
 LTLIBRARIES = $(noinst_LTLIBRARIES)
 libopenrisc_la_LIBADD =
 am__objects_1 = or1k.lo or1k_du_adv.lo or1k_tap_mohor.lo \
-	or1k_tap_vjtag.lo or1k_tap_xilinx_bscan.lo
+	or1k_tap_vjtag.lo or1k_tap_xilinx_bscan.lo jsp_server.lo
 am_libopenrisc_la_OBJECTS = $(am__objects_1)
 libopenrisc_la_OBJECTS = $(am_libopenrisc_la_OBJECTS)
 AM_V_lt = $(am__v_lt_@AM_V@)
@@ -176,9 +176,7 @@ AUTOMAKE = @AUTOMAKE@
 AWK = @AWK@
 CC = @CC@
 CCDEPMODE = @CCDEPMODE@
-CC_FOR_BUILD = @CC_FOR_BUILD@
 CFLAGS = @CFLAGS@
-CFLAGS_FOR_BUILD = @CFLAGS_FOR_BUILD@
 CPP = @CPP@
 CPPFLAGS = @CPPFLAGS@
 CYGPATH_W = @CYGPATH_W@
@@ -192,7 +190,6 @@ ECHO_N = @ECHO_N@
 ECHO_T = @ECHO_T@
 EGREP = @EGREP@
 EXEEXT = @EXEEXT@
-EXEEXT_FOR_BUILD = @EXEEXT_FOR_BUILD@
 FGREP = @FGREP@
 GREP = @GREP@
 HIDAPI_CFLAGS = @HIDAPI_CFLAGS@
@@ -310,12 +307,14 @@ OPENRISC_SRC = \
 	or1k_du_adv.c \
 	or1k_tap_mohor.c \
 	or1k_tap_vjtag.c \
-	or1k_tap_xilinx_bscan.c
+	or1k_tap_xilinx_bscan.c \
+	jsp_server.c
 
 noinst_HEADERS = \
 	or1k.h \
 	or1k_du.h \
-	or1k_tap.h
+	or1k_tap.h \
+	jsp_server.h
 
 all: all-am
 
@@ -373,6 +372,7 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/jsp_server.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/or1k.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/or1k_du_adv.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/or1k_tap_mohor.Plo@am__quote@

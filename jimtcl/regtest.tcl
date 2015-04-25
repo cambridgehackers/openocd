@@ -1,3 +1,6 @@
+# These regression tests all provoked crashes at some point.
+# Thus they are kept separate from the regular test suite in tests/
+
 # REGTEST 1
 # 27Jan2005 - SIGSEGV for bug on Jim_DuplicateObj().
 
@@ -209,6 +212,39 @@ puts "TEST 28 PASSED"
 set x [lindex {} 0]
 info source $x
 eval $x
+puts "TEST 29 PASSED"
+
+# REGTEST 30
+# non-UTF8 string tolower 
+string tolower "/mod/video/h\303\203\302\244xan_ witchcraft through the ages_20131101_0110.t"
+puts "TEST 30 PASSED"
+
+# REGTEST 31
+# infinite lsort -unique with error
+catch {lsort -unique -real {foo 42.0}}
+puts "TEST 31 PASSED"
+
+# REGTEST 32
+# return -code eval should only used by tailcall, but this incorrect usage
+# should not crash the interpreter
+proc a {} { tailcall b }
+proc b {} { return -code eval c }
+proc c {} {}
+catch -eval a
+puts "TEST 32 PASSED"
+
+# REGTEST 33
+# unset array variable which doesn't exist
+array unset blahblah abc
+puts "TEST 33 PASSED"
+
+# REGTEST 34
+# onexception and writable conflict
+set f [open [info nameofexecutable]]
+$f onexception {incr x}
+$f writable {incr y}
+$f close
+puts "TEST 34 PASSED"
 
 # TAKE THE FOLLOWING puts AS LAST LINE
 

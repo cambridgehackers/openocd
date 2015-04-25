@@ -153,9 +153,9 @@ test parse-1.28 "nested dict sugar" {
 set dq {"}
 set script "set x ${dq}hello"
 
-test parse-1.29 "missing quote" jim {
+test parse-1.29 "missing quote" -constraints jim -body {
 	eval $script
-} hello
+} -returnCodes error -match glob -result {missing quote}
 
 test parse-1.30 "missing quote" {
 	info complete $script
@@ -319,5 +319,20 @@ test parse-1.62 "quoted orphan dollar sign" {
 test parse-1.63 "unquoted dollar sign" {
 	set x x$
 } {x$}
+
+test parse-1.64 "backslash in comment" {
+	set x 0
+	# comment \
+	incr x
+	incr x
+} 1
+
+test parse-1.65 "double backslash in comment" {
+	set x 0
+	# comment \\
+	incr x
+	incr x
+} 2
+
 
 testreport

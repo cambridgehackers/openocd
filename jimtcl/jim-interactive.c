@@ -19,6 +19,7 @@ char *Jim_HistoryGetline(const char *prompt)
 #ifdef USE_LINENOISE
     return linenoise(prompt);
 #else
+    int len;
     char *line = malloc(MAX_LINE_LEN);
 
     fputs(prompt, stdout);
@@ -27,6 +28,10 @@ char *Jim_HistoryGetline(const char *prompt)
     if (fgets(line, MAX_LINE_LEN, stdin) == NULL) {
         free(line);
         return NULL;
+    }
+    len = strlen(line);
+    if (len && line[len - 1] == '\n') {
+        line[len - 1] = '\0';
     }
     return line;
 #endif
@@ -82,7 +87,7 @@ int Jim_InteractivePrompt(Jim_Interp *interp)
     }
 #endif
 
-    printf("Welcome to Jim version %d.%d" JIM_NL,
+    printf("Welcome to Jim version %d.%d\n",
         JIM_VERSION / 100, JIM_VERSION % 100);
     Jim_SetVariableStrWithStr(interp, JIM_INTERACTIVE, "1");
 

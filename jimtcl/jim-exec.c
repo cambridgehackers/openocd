@@ -81,6 +81,7 @@ int Jim_execInit(Jim_Interp *interp)
 {
     if (Jim_PackageProvide(interp, "exec", "1.0", JIM_ERRMSG))
         return JIM_ERR;
+
     Jim_CreateCommand(interp, "exec", Jim_ExecCmd, NULL, NULL);
     return JIM_OK;
 }
@@ -125,6 +126,7 @@ int Jim_execInit(Jim_Interp *interp)
     #include <unistd.h>
     #include <fcntl.h>
     #include <sys/wait.h>
+    #include <sys/stat.h>
 
     typedef int fdtype;
     typedef int pidtype;
@@ -152,7 +154,7 @@ static int JimCreatePipeline(Jim_Interp *interp, int argc, Jim_Obj *const *argv,
     pidtype **pidArrayPtr, fdtype *inPipePtr, fdtype *outPipePtr, fdtype *errFilePtr);
 static void JimDetachPids(Jim_Interp *interp, int numPids, const pidtype *pidPtr);
 static int JimCleanupChildren(Jim_Interp *interp, int numPids, pidtype *pidPtr, fdtype errorId);
-static fdtype JimCreateTemp(Jim_Interp *interp, const char *contents);
+static fdtype JimCreateTemp(Jim_Interp *interp, const char *contents, int len);
 static fdtype JimOpenForWrite(const char *filename, int append);
 static int JimRewindFd(fdtype fd);
 
@@ -166,6 +168,10 @@ static const char *JimStrError(void)
     return strerror(JimErrno());
 }
 
+/*
+ * If the last character of 'objPtr' is a newline, then remove
+ * the newline character.
+ */
 static void Jim_RemoveTrailingNewline(Jim_Obj *objPtr)
 {
     int len;
@@ -203,23 +209,6 @@ static int JimAppendStreamToString(Jim_Interp *interp, fdtype fd, Jim_Obj *strOb
     return JIM_OK;
 }
 
-/*
- * If the last character of the result is a newline, then remove
- * the newline character (the newline would just confuse things).
- *
- * Note: Ideally we could do this by just reducing the length of stringrep
- *       by 1, but there is no API for this :-(
- */
-static void JimTrimTrailingNewline(Jim_Interp *interp)
-{
-    int len;
-    const char *p = Jim_GetString(Jim_GetResult(interp), &len);
-
-    if (len > 0 && p[len - 1] == '\n') {
-        Jim_SetResultString(interp, p, len - 1);
-    }
-}
-
 /**
  * Builds the environment array from $::env
  *
@@ -231,7 +220,6 @@ static void JimTrimTrailingNewline(Jim_Interp *interp)
  */
 static char **JimBuildEnv(Jim_Interp *interp)
 {
-#if defined(jim_ext_tclcompat)
     int i;
     int size;
     int num;
@@ -253,6 +241,7 @@ static char **JimBuildEnv(Jim_Interp *interp)
     /* Calculate the required size */
     num = Jim_ListLength(interp, objPtr);
     if (num % 2) {
+        /* Silently drop the last element if not a valid dictionary */
         num--;
     }
     /* We need one \0 and one equal sign for each element.
@@ -283,9 +272,6 @@ static char **JimBuildEnv(Jim_Interp *interp)
     *envdata = 0;
 
     return envptr;
-#else
-    return Jim_GetEnviron();
-#endif
 }
 
 /**
@@ -295,18 +281,16 @@ static char **JimBuildEnv(Jim_Interp *interp)
  */
 static void JimFreeEnv(char **env, char **original_environ)
 {
-#ifdef jim_ext_tclcompat
     if (env != original_environ) {
         Jim_Free(env);
     }
-#endif
 }
 
 /*
- * Create error messages for unusual process exits.  An
- * extra newline gets appended to each error message, but
- * it gets removed below (in the same fashion that an
- * extra newline in the command's output is removed).
+ * Create and store an appropriate value for the global variable $::errorCode
+ * Based on pid and waitStatus.
+ *
+ * Returns JIM_OK for a normal exit with code 0, otherwise returns JIM_ERR.
  */
 static int JimCheckWaitStatus(Jim_Interp *interp, pidtype pid, int waitStatus)
 {
@@ -362,15 +346,15 @@ static int JimCheckWaitStatus(Jim_Interp *interp, pidtype pid, int waitStatus)
 
 struct WaitInfo
 {
-    pidtype pid;                    /* Process id of child. */
+    pidtype pid;                /* Process id of child. */
     int status;                 /* Status returned when child exited or suspended. */
     int flags;                  /* Various flag bits;  see below for definitions. */
 };
 
 struct WaitInfoTable {
-    struct WaitInfo *info;
-    int size;
-    int used;
+    struct WaitInfo *info;      /* Table of outstanding processes */
+    int size;                   /* Size of the allocated table */
+    int used;                   /* Number of entries in use */
 };
 
 /*
@@ -407,15 +391,13 @@ static struct WaitInfoTable *JimAllocWaitInfoTable(void)
  */
 static int Jim_ExecCmd(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 {
-    fdtype outputId;               /* File id for output pipe.  -1
-                                 * means command overrode. */
-    fdtype errorId;                /* File id for temporary file
-                                 * containing error output. */
+    fdtype outputId;    /* File id for output pipe. -1 means command overrode. */
+    fdtype errorId;     /* File id for temporary file containing error output. */
     pidtype *pidPtr;
     int numPids, result;
 
     /*
-     * See if the command is to be run in background;  if so, create
+     * See if the command is to be run in the background; if so, create
      * the command, detach it, and return.
      */
     if (argc > 1 && Jim_CompareStringImmediate(interp, argv[argc - 1], "&")) {
@@ -471,22 +453,28 @@ static void JimReapDetachedPids(struct WaitInfoTable *table)
 {
     struct WaitInfo *waitPtr;
     int count;
+    int dest;
 
     if (!table) {
         return;
     }
 
-    for (waitPtr = table->info, count = table->used; count > 0; waitPtr++, count--) {
+    waitPtr = table->info;
+    dest = 0;
+    for (count = table->used; count > 0; waitPtr++, count--) {
         if (waitPtr->flags & WI_DETACHED) {
             int status;
             pidtype pid = JimWaitPid(waitPtr->pid, &status, WNOHANG);
-            if (pid != JIM_BAD_PID) {
-                if (waitPtr != &table->info[table->used - 1]) {
-                    *waitPtr = table->info[table->used - 1];
-                }
+            if (pid == waitPtr->pid) {
+                /* Process has exited, so remove it from the table */
                 table->used--;
+                continue;
             }
         }
+        if (waitPtr != &table->info[dest]) {
+            table->info[dest] = *waitPtr;
+        }
+        dest++;
     }
 }
 
@@ -520,24 +508,11 @@ static pidtype JimWaitForProcess(struct WaitInfoTable *table, pidtype pid, int *
     return JIM_BAD_PID;
 }
 
-/*
- *----------------------------------------------------------------------
- *
- * JimDetachPids --
- *
- *  This procedure is called to indicate that one or more child
- *  processes have been placed in background and are no longer
- *  cared about.  These children can be cleaned up with JimReapDetachedPids().
- *
- * Results:
- *  None.
- *
- * Side effects:
- *  None.
- *
- *----------------------------------------------------------------------
+/**
+ * Indicates that one or more child processes have been placed in
+ * background and are no longer cared about.
+ * These children can be cleaned up with JimReapDetachedPids().
  */
-
 static void JimDetachPids(Jim_Interp *interp, int numPids, const pidtype *pidPtr)
 {
     int j;
@@ -609,6 +584,7 @@ JimCreatePipeline(Jim_Interp *interp, int argc, Jim_Obj *const *argv, pidtype **
     const char *input = NULL;   /* Describes input for pipeline, depending
                                  * on "inputFile".  NULL means take input
                                  * from stdin/pipe. */
+    int input_len = 0;          /* Length of input, if relevant */
 
 #define FILE_NAME   0           /* input/output: filename */
 #define FILE_APPEND 1           /* output only:  filename, append */
@@ -693,6 +669,7 @@ JimCreatePipeline(Jim_Interp *interp, int argc, Jim_Obj *const *argv, pidtype **
             input = arg + 1;
             if (*input == '<') {
                 inputFile = FILE_TEXT;
+                input_len = Jim_Length(argv[i]) - 2;
                 input++;
             }
             else if (*input == '@') {
@@ -701,7 +678,7 @@ JimCreatePipeline(Jim_Interp *interp, int argc, Jim_Obj *const *argv, pidtype **
             }
 
             if (!*input && ++i < argc) {
-                input = Jim_String(argv[i]);
+                input = Jim_GetString(argv[i], &input_len);
             }
         }
         else if (arg[0] == '>') {
@@ -787,7 +764,7 @@ badargs:
              * Immediate data in command.  Create temporary file and
              * put data into file.
              */
-            inputId = JimCreateTemp(interp, input);
+            inputId = JimCreateTemp(interp, input, input_len);
             if (inputId == JIM_BAD_FD) {
                 goto error;
             }
@@ -900,7 +877,7 @@ badargs:
          * to complete before reading stderr, and processes couldn't complete
          * because stderr was backed up.
          */
-        errorId = JimCreateTemp(interp, NULL);
+        errorId = JimCreateTemp(interp, NULL, 0);
         if (errorId == JIM_BAD_FD) {
             goto error;
         }
@@ -941,6 +918,11 @@ badargs:
             outputId = pipeIds[1];
         }
 
+        /* Need to do this befor vfork() */
+        if (pipe_dup_err) {
+            errorId = outputId;
+        }
+
         /* Now fork the child */
 
 #ifdef __MINGW32__
@@ -950,22 +932,6 @@ badargs:
             goto error;
         }
 #else
-        /*
-         * Disable SIGPIPE signals:  if they were allowed, this process
-         * might go away unexpectedly if children misbehave.  This code
-         * can potentially interfere with other application code that
-         * expects to handle SIGPIPEs;  what's really needed is an
-         * arbiter for signals to allow them to be "shared".
-         */
-        if (table->info == NULL) {
-            (void)signal(SIGPIPE, SIG_IGN);
-        }
-
-        /* Need to do this befor vfork() */
-        if (pipe_dup_err) {
-            errorId = outputId;
-        }
-
         /*
          * Make a new process and enter it into the table if the fork
          * is successful.
@@ -986,10 +952,13 @@ badargs:
                 close(i);
             }
 
+            /* Restore SIGPIPE behaviour */
+            (void)signal(SIGPIPE, SIG_DFL);
+
             execvpe(arg_array[firstArg], &arg_array[firstArg], Jim_GetEnviron());
 
             /* Need to prep an error message before vfork(), just in case */
-            fprintf(stderr, "couldn't exec \"%s\"", arg_array[firstArg]);
+            fprintf(stderr, "couldn't exec \"%s\"\n", arg_array[firstArg]);
             _exit(127);
         }
 #endif
@@ -1137,7 +1106,7 @@ static int JimCleanupChildren(Jim_Interp *interp, int numPids, pidtype *pidPtr, 
         }
     }
 
-    JimTrimTrailingNewline(interp);
+    Jim_RemoveTrailingNewline(Jim_GetResult(interp));
 
     return result;
 }
@@ -1146,6 +1115,21 @@ int Jim_execInit(Jim_Interp *interp)
 {
     if (Jim_PackageProvide(interp, "exec", "1.0", JIM_ERRMSG))
         return JIM_ERR;
+
+#ifdef SIGPIPE
+    /*
+     * Disable SIGPIPE signals:  if they were allowed, this process
+     * might go away unexpectedly if children misbehave.  This code
+     * can potentially interfere with other application code that
+     * expects to handle SIGPIPEs.
+     *
+     * By doing this in the init function, applications can override
+     * this later. Note that child processes have SIGPIPE restored
+     * to the default after vfork().
+     */
+    (void)signal(SIGPIPE, SIG_IGN);
+#endif
+
     Jim_CreateCommand(interp, "exec", Jim_ExecCmd, JimAllocWaitInfoTable(), JimFreeWaitInfoTable);
     return JIM_OK;
 }
@@ -1323,7 +1307,7 @@ static pidtype JimWaitPid(pidtype pid, int *status, int nohang)
     return pid;
 }
 
-static HANDLE JimCreateTemp(Jim_Interp *interp, const char *contents)
+static HANDLE JimCreateTemp(Jim_Interp *interp, const char *contents, int len)
 {
     char name[MAX_PATH];
     HANDLE handle;
@@ -1347,7 +1331,7 @@ static HANDLE JimCreateTemp(Jim_Interp *interp, const char *contents)
             goto error;
         }
 
-        if (fwrite(contents, strlen(contents), 1, fh) != 1) {
+        if (fwrite(contents, len, 1, fh) != 1) {
             fclose(fh);
             goto error;
         }
@@ -1478,14 +1462,12 @@ JimStartWinProcess(Jim_Interp *interp, char **argv, char *env, fdtype inputId, f
     PROCESS_INFORMATION procInfo;
     HANDLE hProcess, h;
     char execPath[MAX_PATH];
-    char *originalName;
     pidtype pid = JIM_BAD_PID;
     Jim_Obj *cmdLineObj;
 
     if (JimWinFindExecutable(argv[0], execPath) < 0) {
         return JIM_BAD_PID;
     }
-    originalName = argv[0];
     argv[0] = execPath;
 
     hProcess = GetCurrentProcess();
@@ -1500,7 +1482,7 @@ JimStartWinProcess(Jim_Interp *interp, char **argv, char *env, fdtype inputId, f
     ZeroMemory(&startInfo, sizeof(startInfo));
     startInfo.cb = sizeof(startInfo);
     startInfo.dwFlags   = STARTF_USESTDHANDLES;
-    startInfo.hStdInput	= INVALID_HANDLE_VALUE;
+    startInfo.hStdInput = INVALID_HANDLE_VALUE;
     startInfo.hStdOutput= INVALID_HANDLE_VALUE;
     startInfo.hStdError = INVALID_HANDLE_VALUE;
 
@@ -1592,24 +1574,20 @@ static int JimRewindFd(int fd)
     return lseek(fd, 0L, SEEK_SET);
 }
 
-static int JimCreateTemp(Jim_Interp *interp, const char *contents)
+static int JimCreateTemp(Jim_Interp *interp, const char *contents, int len)
 {
-    char inName[] = "/tmp/tcl.tmp.XXXXXX";
+    int fd = Jim_MakeTempFile(interp, NULL);
 
-    int fd = mkstemp(inName);
-    if (fd == JIM_BAD_FD) {
-        Jim_SetResultErrno(interp, "couldn't create temp file");
-        return -1;
-    }
-    unlink(inName);
-    if (contents) {
-        int length = strlen(contents);
-        if (write(fd, contents, length) != length) {
-            Jim_SetResultErrno(interp, "couldn't write temp file");
-            close(fd);
-            return -1;
+    if (fd != JIM_BAD_FD) {
+        unlink(Jim_String(Jim_GetResult(interp)));
+        if (contents) {
+            if (write(fd, contents, len) != len) {
+                Jim_SetResultErrno(interp, "couldn't write temp file");
+                close(fd);
+                return -1;
+            }
+            lseek(fd, 0L, SEEK_SET);
         }
-        lseek(fd, 0L, SEEK_SET);
     }
     return fd;
 }

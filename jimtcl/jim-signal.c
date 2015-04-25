@@ -1,4 +1,3 @@
-
 /*
  * jim-signal.c
  *
@@ -13,12 +12,20 @@
 #include <jim-subcmd.h>
 #include <jim-signal.h>
 
-#define MAX_SIGNALS (sizeof(jim_wide) * 8)
+#define MAX_SIGNALS_WIDE (sizeof(jim_wide) * 8)
+#if defined(NSIG)
+    #define MAX_SIGNALS ((NSIG < MAX_SIGNALS_WIDE) ? NSIG : MAX_SIGNALS_WIDE)
+#else
+    #define MAX_SIGNALS MAX_SIGNALS_WIDE
+#endif
 
 static jim_wide *sigloc;
 static jim_wide sigsblocked;
 static struct sigaction *sa_old;
-static int signal_handling[MAX_SIGNALS];
+static struct {
+    int status;
+    const char *name;
+} siginfo[MAX_SIGNALS];
 
 /* Make sure to do this as a wide, not int */
 #define sig_to_bit(SIG) ((jim_wide)1 << (SIG))
@@ -35,6 +42,61 @@ static void signal_ignorer(int sig)
 {
     /* We just remember which signals occurred */
     sigsblocked |= sig_to_bit(sig);
+}
+
+static void signal_init_names(void)
+{
+#define SET_SIG_NAME(SIG) siginfo[SIG].name = #SIG
+
+    SET_SIG_NAME(SIGABRT);
+    SET_SIG_NAME(SIGALRM);
+    SET_SIG_NAME(SIGBUS);
+    SET_SIG_NAME(SIGCHLD);
+    SET_SIG_NAME(SIGCONT);
+    SET_SIG_NAME(SIGFPE);
+    SET_SIG_NAME(SIGHUP);
+    SET_SIG_NAME(SIGILL);
+    SET_SIG_NAME(SIGINT);
+#ifdef SIGIO
+    SET_SIG_NAME(SIGIO);
+#endif
+    SET_SIG_NAME(SIGKILL);
+    SET_SIG_NAME(SIGPIPE);
+    SET_SIG_NAME(SIGPROF);
+    SET_SIG_NAME(SIGQUIT);
+    SET_SIG_NAME(SIGSEGV);
+    SET_SIG_NAME(SIGSTOP);
+    SET_SIG_NAME(SIGSYS);
+    SET_SIG_NAME(SIGTERM);
+    SET_SIG_NAME(SIGTRAP);
+    SET_SIG_NAME(SIGTSTP);
+    SET_SIG_NAME(SIGTTIN);
+    SET_SIG_NAME(SIGTTOU);
+    SET_SIG_NAME(SIGURG);
+    SET_SIG_NAME(SIGUSR1);
+    SET_SIG_NAME(SIGUSR2);
+    SET_SIG_NAME(SIGVTALRM);
+    SET_SIG_NAME(SIGWINCH);
+    SET_SIG_NAME(SIGXCPU);
+    SET_SIG_NAME(SIGXFSZ);
+#ifdef SIGPWR
+    SET_SIG_NAME(SIGPWR);
+#endif
+#ifdef SIGCLD
+    SET_SIG_NAME(SIGCLD);
+#endif
+#ifdef SIGEMT
+    SET_SIG_NAME(SIGEMT);
+#endif
+#ifdef SIGLOST
+    SET_SIG_NAME(SIGLOST);
+#endif
+#ifdef SIGPOLL
+    SET_SIG_NAME(SIGPOLL);
+#endif
+#ifdef SIGINFO
+    SET_SIG_NAME(SIGINFO);
+#endif
 }
 
 /*
@@ -54,59 +116,13 @@ static void signal_ignorer(int sig)
  *
  *----------------------------------------------------------------------
  */
-#define CHECK_SIG(NAME) if (sig == NAME) return #NAME
-
 const char *Jim_SignalId(int sig)
 {
-    CHECK_SIG(SIGABRT);
-    CHECK_SIG(SIGALRM);
-    CHECK_SIG(SIGBUS);
-    CHECK_SIG(SIGCHLD);
-    CHECK_SIG(SIGCONT);
-    CHECK_SIG(SIGFPE);
-    CHECK_SIG(SIGHUP);
-    CHECK_SIG(SIGILL);
-    CHECK_SIG(SIGINT);
-#ifdef SIGIO
-    CHECK_SIG(SIGIO);
-#endif
-    CHECK_SIG(SIGKILL);
-    CHECK_SIG(SIGPIPE);
-    CHECK_SIG(SIGPROF);
-    CHECK_SIG(SIGQUIT);
-    CHECK_SIG(SIGSEGV);
-    CHECK_SIG(SIGSTOP);
-    CHECK_SIG(SIGSYS);
-    CHECK_SIG(SIGTERM);
-    CHECK_SIG(SIGTRAP);
-    CHECK_SIG(SIGTSTP);
-    CHECK_SIG(SIGTTIN);
-    CHECK_SIG(SIGTTOU);
-    CHECK_SIG(SIGURG);
-    CHECK_SIG(SIGUSR1);
-    CHECK_SIG(SIGUSR2);
-    CHECK_SIG(SIGVTALRM);
-    CHECK_SIG(SIGWINCH);
-    CHECK_SIG(SIGXCPU);
-    CHECK_SIG(SIGXFSZ);
-#ifdef SIGPWR
-    CHECK_SIG(SIGPWR);
-#endif
-#ifdef SIGCLD
-    CHECK_SIG(SIGCLD);
-#endif
-#ifdef SIGEMT
-    CHECK_SIG(SIGEMT);
-#endif
-#ifdef SIGLOST
-    CHECK_SIG(SIGLOST);
-#endif
-#ifdef SIGPOLL
-    CHECK_SIG(SIGPOLL);
-#endif
-#ifdef SIGINFO
-    CHECK_SIG(SIGINFO);
-#endif
+    if (sig >=0 && sig < MAX_SIGNALS) {
+        if (siginfo[sig].name) {
+            return siginfo[sig].name;
+        }
+    }
     return "unknown signal";
 }
 
@@ -147,15 +163,14 @@ static int find_signal_by_name(Jim_Interp *interp, const char *name)
     else {
         for (i = 1; i < MAX_SIGNALS; i++) {
             /* Jim_SignalId() returns names such as SIGINT, and
-             * returns "unknown signal id" if unknown, so this will work
+             * returns "unknown signal" if unknown, so this will work
              */
             if (strcasecmp(Jim_SignalId(i) + 3, pt) == 0) {
                 return i;
             }
         }
     }
-    Jim_SetResultString(interp, "unknown signal ", -1);
-    Jim_AppendString(interp, Jim_GetResult(interp), name, -1);
+    Jim_SetResultFormatted(interp, "unknown signal %s", name);
 
     return -1;
 }
@@ -172,7 +187,7 @@ static int do_signal_cmd(Jim_Interp *interp, int action, int argc, Jim_Obj *cons
     if (argc == 0) {
         Jim_SetResult(interp, Jim_NewListObj(interp, NULL, 0));
         for (i = 1; i < MAX_SIGNALS; i++) {
-            if (signal_handling[i] == action) {
+            if (siginfo[i].status == action) {
                 /* Add signal name to the list  */
                 Jim_ListAppendElement(interp, Jim_GetResult(interp),
                     Jim_NewStringObj(interp, Jim_SignalId(i), -1));
@@ -183,8 +198,7 @@ static int do_signal_cmd(Jim_Interp *interp, int action, int argc, Jim_Obj *cons
 
     /* Catch all the signals we care about */
     if (action != SIGNAL_ACTION_DEFAULT) {
-        sa.sa_flags = 0;
-        sigemptyset(&sa.sa_mask);
+        memset(&sa, 0, sizeof(sa));
         if (action == SIGNAL_ACTION_HANDLE) {
             sa.sa_handler = signal_handler;
         }
@@ -200,12 +214,12 @@ static int do_signal_cmd(Jim_Interp *interp, int action, int argc, Jim_Obj *cons
         if (sig < 0) {
             return JIM_ERR;
         }
-        if (action != signal_handling[sig]) {
+        if (action != siginfo[sig].status) {
             /* Need to change the action for this signal */
             switch (action) {
                 case SIGNAL_ACTION_HANDLE:
                 case SIGNAL_ACTION_IGNORE:
-                    if (signal_handling[sig] == SIGNAL_ACTION_DEFAULT) {
+                    if (siginfo[sig].status == SIGNAL_ACTION_DEFAULT) {
                         if (!sa_old) {
                             /* Allocate the structure the first time through */
                             sa_old = Jim_Alloc(sizeof(*sa_old) * MAX_SIGNALS);
@@ -223,7 +237,7 @@ static int do_signal_cmd(Jim_Interp *interp, int action, int argc, Jim_Obj *cons
                         sigaction(sig, &sa_old[sig], 0);
                     }
             }
-            signal_handling[sig] = action;
+            siginfo[sig].status = action;
         }
     }
 
@@ -311,7 +325,7 @@ static int signal_cmd_throw(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
     }
 
     /* If the signal is ignored (blocked) ... */
-    if (signal_handling[sig] == SIGNAL_ACTION_IGNORE) {
+    if (siginfo[sig].status == SIGNAL_ACTION_IGNORE) {
         sigsblocked |= sig_to_bit(sig);
         return JIM_OK;
     }
@@ -436,12 +450,9 @@ static int Jim_SleepCmd(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
         ret = Jim_GetDouble(interp, argv[1], &t);
         if (ret == JIM_OK) {
 #ifdef HAVE_USLEEP
-            if (t < 1) {
-                usleep(t * 1e6);
-            }
-            else
+            usleep((int)((t - (int)t) * 1e6));
 #endif
-                sleep(t);
+            sleep(t);
         }
     }
 
@@ -461,22 +472,22 @@ static int Jim_KillCmd(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
     }
 
     if (argc == 2) {
-        signame = "SIGTERM";
+        sig = SIGTERM;
         pidObj = argv[1];
     }
     else {
         signame = Jim_String(argv[1]);
         pidObj = argv[2];
-    }
 
-    /* Special 'kill -0 pid' to determine if a pid exists */
-    if (strcmp(signame, "-0") == 0 || strcmp(signame, "0") == 0) {
-        sig = 0;
-    }
-    else {
-        sig = find_signal_by_name(interp, signame);
-        if (sig < 0) {
-            return JIM_ERR;
+        /* Special 'kill -0 pid' to determine if a pid exists */
+        if (strcmp(signame, "-0") == 0 || strcmp(signame, "0") == 0) {
+            sig = 0;
+        }
+        else {
+            sig = find_signal_by_name(interp, signame);
+            if (sig < 0) {
+                return JIM_ERR;
+            }
         }
     }
 
@@ -496,6 +507,8 @@ int Jim_signalInit(Jim_Interp *interp)
 {
     if (Jim_PackageProvide(interp, "signal", "1.0", JIM_ERRMSG))
         return JIM_ERR;
+
+    signal_init_names();
 
     /* Teach the jim core how to set a result from a sigmask */
     interp->signal_set_result = signal_set_sigmask_result;

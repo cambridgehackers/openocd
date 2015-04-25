@@ -122,9 +122,11 @@ am_librtos_la_OBJECTS = librtos_la-rtos.lo \
 	librtos_la-rtos_standard_stackings.lo \
 	librtos_la-rtos_ecos_stackings.lo \
 	librtos_la-rtos_chibios_stackings.lo \
-	librtos_la-rtos_embkernel_stackings.lo librtos_la-FreeRTOS.lo \
+	librtos_la-rtos_embkernel_stackings.lo \
+	librtos_la-rtos_mqx_stackings.lo librtos_la-FreeRTOS.lo \
 	librtos_la-ThreadX.lo librtos_la-eCos.lo librtos_la-linux.lo \
-	librtos_la-ChibiOS.lo librtos_la-embKernel.lo
+	librtos_la-ChibiOS.lo librtos_la-embKernel.lo \
+	librtos_la-mqx.lo
 librtos_la_OBJECTS = $(am_librtos_la_OBJECTS)
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
@@ -205,9 +207,7 @@ AUTOMAKE = @AUTOMAKE@
 AWK = @AWK@
 CC = @CC@
 CCDEPMODE = @CCDEPMODE@
-CC_FOR_BUILD = @CC_FOR_BUILD@
 CFLAGS = @CFLAGS@
-CFLAGS_FOR_BUILD = @CFLAGS_FOR_BUILD@
 CPP = @CPP@
 CPPFLAGS = @CPPFLAGS@
 CYGPATH_W = @CYGPATH_W@
@@ -221,7 +221,6 @@ ECHO_N = @ECHO_N@
 ECHO_T = @ECHO_T@
 EGREP = @EGREP@
 EXEEXT = @EXEEXT@
-EXEEXT_FOR_BUILD = @EXEEXT_FOR_BUILD@
 FGREP = @FGREP@
 GREP = @GREP@
 HIDAPI_CFLAGS = @HIDAPI_CFLAGS@
@@ -334,8 +333,8 @@ AM_CPPFLAGS = -I$(top_srcdir)/src -I$(top_builddir)/src \
 	-DBINDIR=\"$(bindir)\" $(am__append_1)
 METASOURCES = AUTO
 noinst_LTLIBRARIES = librtos.la
-noinst_HEADERS = rtos.h rtos_standard_stackings.h rtos_ecos_stackings.h linux_header.h rtos_chibios_stackings.h rtos_embkernel_stackings.h
-librtos_la_SOURCES = rtos.c rtos_standard_stackings.c rtos_ecos_stackings.c  rtos_chibios_stackings.c rtos_embkernel_stackings.c FreeRTOS.c ThreadX.c eCos.c linux.c ChibiOS.c embKernel.c
+noinst_HEADERS = rtos.h rtos_standard_stackings.h rtos_ecos_stackings.h linux_header.h rtos_chibios_stackings.h rtos_embkernel_stackings.h rtos_mqx_stackings.h
+librtos_la_SOURCES = rtos.c rtos_standard_stackings.c rtos_ecos_stackings.c  rtos_chibios_stackings.c rtos_embkernel_stackings.c rtos_mqx_stackings.c FreeRTOS.c ThreadX.c eCos.c linux.c ChibiOS.c embKernel.c mqx.c
 librtos_la_CFLAGS = $(am__append_2)
 MAINTAINERCLEANFILES = $(srcdir)/Makefile.in
 all: all-am
@@ -400,10 +399,12 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/librtos_la-eCos.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/librtos_la-embKernel.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/librtos_la-linux.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/librtos_la-mqx.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/librtos_la-rtos.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/librtos_la-rtos_chibios_stackings.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/librtos_la-rtos_ecos_stackings.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/librtos_la-rtos_embkernel_stackings.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/librtos_la-rtos_mqx_stackings.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/librtos_la-rtos_standard_stackings.Plo@am__quote@
 
 .c.o:
@@ -465,6 +466,13 @@ librtos_la-rtos_embkernel_stackings.lo: rtos_embkernel_stackings.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(librtos_la_CFLAGS) $(CFLAGS) -c -o librtos_la-rtos_embkernel_stackings.lo `test -f 'rtos_embkernel_stackings.c' || echo '$(srcdir)/'`rtos_embkernel_stackings.c
 
+librtos_la-rtos_mqx_stackings.lo: rtos_mqx_stackings.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(librtos_la_CFLAGS) $(CFLAGS) -MT librtos_la-rtos_mqx_stackings.lo -MD -MP -MF $(DEPDIR)/librtos_la-rtos_mqx_stackings.Tpo -c -o librtos_la-rtos_mqx_stackings.lo `test -f 'rtos_mqx_stackings.c' || echo '$(srcdir)/'`rtos_mqx_stackings.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/librtos_la-rtos_mqx_stackings.Tpo $(DEPDIR)/librtos_la-rtos_mqx_stackings.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='rtos_mqx_stackings.c' object='librtos_la-rtos_mqx_stackings.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(librtos_la_CFLAGS) $(CFLAGS) -c -o librtos_la-rtos_mqx_stackings.lo `test -f 'rtos_mqx_stackings.c' || echo '$(srcdir)/'`rtos_mqx_stackings.c
+
 librtos_la-FreeRTOS.lo: FreeRTOS.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(librtos_la_CFLAGS) $(CFLAGS) -MT librtos_la-FreeRTOS.lo -MD -MP -MF $(DEPDIR)/librtos_la-FreeRTOS.Tpo -c -o librtos_la-FreeRTOS.lo `test -f 'FreeRTOS.c' || echo '$(srcdir)/'`FreeRTOS.c
 @am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/librtos_la-FreeRTOS.Tpo $(DEPDIR)/librtos_la-FreeRTOS.Plo
@@ -506,6 +514,13 @@ librtos_la-embKernel.lo: embKernel.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='embKernel.c' object='librtos_la-embKernel.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(librtos_la_CFLAGS) $(CFLAGS) -c -o librtos_la-embKernel.lo `test -f 'embKernel.c' || echo '$(srcdir)/'`embKernel.c
+
+librtos_la-mqx.lo: mqx.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(librtos_la_CFLAGS) $(CFLAGS) -MT librtos_la-mqx.lo -MD -MP -MF $(DEPDIR)/librtos_la-mqx.Tpo -c -o librtos_la-mqx.lo `test -f 'mqx.c' || echo '$(srcdir)/'`mqx.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/librtos_la-mqx.Tpo $(DEPDIR)/librtos_la-mqx.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='mqx.c' object='librtos_la-mqx.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(librtos_la_CFLAGS) $(CFLAGS) -c -o librtos_la-mqx.lo `test -f 'mqx.c' || echo '$(srcdir)/'`mqx.c
 
 mostlyclean-libtool:
 	-rm -f *.lo

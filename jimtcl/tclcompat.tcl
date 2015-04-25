@@ -1,12 +1,14 @@
-# (c) 2008 Steve Bennett <steveb@workware.net.au>
-#
 # Loads some Tcl-compatible features.
 # I/O commands, case, lassign, parray, errorInfo, ::tcl_platform, ::env
 # try, throw, file copy, file delete -force
+#
+# (c) 2008 Steve Bennett <steveb@workware.net.au>
+
 
 # Set up the ::env array
 set env [env]
 
+# Provide Tcl-compatible I/O commands
 if {[info commands stdout] ne ""} {
 	# Tcl-compatible I/O commands
 	foreach p {gets flush close eof seek tell} {
@@ -56,47 +58,6 @@ if {[info commands stdout] ne ""} {
 	}
 }
 
-# case var ?in? pattern action ?pattern action ...?
-proc case {var args} {
-	# Skip dummy parameter
-	if {[lindex $args 0] eq "in"} {
-		set args [lrange $args 1 end]
-	}
-
-	# Check for single arg form
-	if {[llength $args] == 1} {
-		set args [lindex $args 0]
-	}
-
-	# Check for odd number of args
-	if {[llength $args] % 2 != 0} {
-		return -code error "extra case pattern with no body"
-	}
-
-	# Internal function to match a value agains a list of patterns
-	local proc case.checker {value pattern} {
-		string match $pattern $value
-	}
-
-	foreach {value action} $args {
-		if {$value eq "default"} {
-			set do_action $action
-			continue
-		} elseif {[lsearch -bool -command case.checker $value $var]} {
-			set do_action $action
-			break
-		}
-	}
-
-	if {[info exists do_action]} {
-		set rc [catch [list uplevel 1 $do_action] result opts]
-		if {$rc} {
-			incr opts(-level)
-		}
-		return {*}$opts $result
-	}
-}
-
 # fileevent isn't needed in Jim, but provide it for compatibility
 proc fileevent {args} {
 	tailcall {*}$args
@@ -128,13 +89,25 @@ proc {file copy} {{force {}} source target} {
 			error "bad option \"$force\": should be -force"
 		}
 
-		set in [open $source]
+		set in [open $source rb]
 
-		if {$force eq "" && [file exists $target]} {
-			$in close
-			error "error copying \"$source\" to \"$target\": file already exists"
+		if {[file exists $target]} {
+			if {$force eq ""} {
+				error "error copying \"$source\" to \"$target\": file already exists"
+			}
+			# If source and target are the same, nothing to do
+			if {$source eq $target} {
+				return
+			}
+			# Hard linked, or case-insensitive filesystem
+			# Note: mingw returns ino=0 for every file :-(
+			file stat $source ss
+			file stat $target ts
+			if {$ss(dev) == $ts(dev) && $ss(ino) == $ts(ino) && $ss(ino)} {
+				return
+			}
 		}
-		set out [open $target w]
+		set out [open $target wb]
 		$in copyto $out
 		$out close
 	} on error {msg opts} {
@@ -181,14 +154,14 @@ proc popen {cmd {mode r}} {
 }
 
 # A wrapper around 'pid' which can return the pids for 'popen'
-local proc pid {{chan {}}} {
-	if {$chan eq ""} {
+local proc pid {{channelId {}}} {
+	if {$channelId eq ""} {
 		tailcall upcall pid
 	}
-	if {[catch {$chan tell}]} {
-		return -code error "can not find channel named \"$chan\""
+	if {[catch {$channelId tell}]} {
+		return -code error "can not find channel named \"$channelId\""
 	}
-	if {[catch {$chan pid} pids]} {
+	if {[catch {$channelId pid} pids]} {
 		return ""
 	}
 	return $pids
@@ -220,7 +193,7 @@ proc try {args} {
 		return -code error {wrong # args: should be "try ?options? script ?argument ...?"}
 	}
 	set args [lassign $args script]
-	set code [catch -eval {*}$catchopts [list uplevel 1 $script] msg opts]
+	set code [catch -eval {*}$catchopts {uplevel 1 $script} msg opts]
 
 	set handled 0
 
@@ -238,12 +211,12 @@ proc try {args} {
 						set hopts $opts
 					}
 					# Override any body result
-					set code [catch [list uplevel 1 $script] msg opts]
+					set code [catch {uplevel 1 $script} msg opts]
 					incr handled
 				}
 			} \
 			finally {
-				set finalcode [catch [list uplevel 1 $codes] finalmsg finalopts]
+				set finalcode [catch {uplevel 1 $codes} finalmsg finalopts]
 				if {$finalcode} {
 					# Override any body or handler result
 					set code $finalcode
