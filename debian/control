@@ -3,11 +3,14 @@ Section: embedded
 Priority: extra
 Maintainer: Uwe Hermann <uwe@debian.org>
 Uploaders: Luca Bruno <lucab@debian.org>
-Build-Depends: cdbs, debhelper (>= 7), autotools-dev, libftdi-dev [!kfreebsd-any], 
-               libusb-1.0-0-dev [linux-any], libusb2-dev (>= 10.1~) [kfreebsd-any], libusb-dev [hurd-any], 
+Build-Depends: cdbs, debhelper (>= 7), autotools-dev, libftdi-dev,
+               libusb-1.0-0-dev [linux-any], libusb-dev [kfreebsd-any hurd-any],
                texinfo, texlive, 
-               autotools-dev, autoconf, automake1.11, libtool, 
-               libhidapi-dev, pkg-config
+               autotools-dev, autoconf,
+               libhidapi-dev,
+               libjim-dev,
+               pkg-config,
+               dh-autoreconf
 Standards-Version: 3.9.5
 Homepage: http://openocd.sourceforge.net/
 

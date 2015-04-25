@@ -4,6 +4,7 @@ include /usr/share/cdbs/1/rules/debhelper.mk
 include /usr/share/cdbs/1/class/makefile.mk
 include /usr/share/cdbs/1/class/autotools.mk
 include /usr/share/cdbs/1/rules/utils.mk
+include /usr/share/cdbs/1/rules/autoreconf.mk
 
 # Also build PDF and HTML documentation.
 DEB_MAKE_BUILD_TARGET := all pdf html
@@ -15,6 +16,7 @@ DEB_COMPRESS_EXCLUDE := .elf .bin
 # TODO: Use --enable-oocd_trace later, right now it's just a proof-of-concept.
 DEB_CONFIGURE_EXTRA_FLAGS := \
 	--disable-werror \
+	--disable-internal-jimtcl \
 	\
 	--enable-dummy \
 	--enable-ep93xx \
@@ -44,7 +46,6 @@ DEB_CONFIGURE_EXTRA_FLAGS += --enable-gw16012 \
 			     --enable-ftdi \
 			     --enable-stlink \
 			     --enable-ti-icdi \
-			     --enable-usb_blaster_libftdi \
 			     $(configure_flags_parport)
 endif
    
