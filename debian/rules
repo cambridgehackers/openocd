@@ -1,0 +1,81 @@
+#!/usr/bin/make -f
+
+include /usr/share/cdbs/1/rules/debhelper.mk
+include /usr/share/cdbs/1/class/makefile.mk
+include /usr/share/cdbs/1/class/autotools.mk
+include /usr/share/cdbs/1/rules/utils.mk
+
+# Also build PDF and HTML documentation.
+DEB_MAKE_BUILD_TARGET := all pdf html
+
+# Don't strip/compress certain files.
+DEB_STRIP_EXCLUDE := .elf .bin
+DEB_COMPRESS_EXCLUDE := .elf .bin
+
+# TODO: Use --enable-oocd_trace later, right now it's just a proof-of-concept.
+DEB_CONFIGURE_EXTRA_FLAGS := \
+	--disable-werror \
+	\
+	--enable-dummy \
+	--enable-ep93xx \
+	--enable-at91rm9200 \
+	--enable-usbprog \
+	--enable-jlink \
+	--enable-vsllink \
+	--enable-rlink \
+	--enable-ulink \
+	--enable-arm-jtag-ew \
+	--enable-buspirate \
+	--enable-osbdm \
+	--enable-opendous \
+	--enable-remote-bitbang \
+        --enable-bcm2835gpio \
+
+
+configure_flags_parport := \
+	--enable-parport \
+	--enable-parport_ppdev
+
+ifeq ($(DEB_HOST_ARCH_OS),linux)
+# Some adapters are only supported on Linux.
+DEB_CONFIGURE_EXTRA_FLAGS += $(configure_flags_parport)
+DEB_CONFIGURE_EXTRA_FLAGS += --enable-gw16012 \
+			     --enable-amtjtagaccel \
+			     --enable-ftdi \
+			     --enable-stlink \
+			     --enable-ti-icdi \
+			     --enable-usb_blaster_libftdi \
+			     $(configure_flags_parport)
+endif
+   
+ifeq ($(DEB_HOST_ARCH_OS),kfreebsd)
+# Parport drivers only work on Linux and kFreeBSD, conditionally add them here.
+DEB_CONFIGURE_EXTRA_FLAGS += $(configure_flags_parport) \
+			     --enable-ftdi \
+			     --enable-stlink \
+			     --enable-ti-icdi
+endif
+
+post-patches::
+	@# Copy udev rules file into debian/ so that dh_installudev finds it.
+	cp contrib/99-openocd.rules debian/openocd.udev
+
+binary-install/openocd::
+	# Install the loaders/ subdir in /usr/share/doc.
+	cp -r contrib/loaders debian/openocd/usr/share/doc/openocd
+
+binary-post-install/openocd::
+	@# Don't ship openocd.udev in /usr/share, dh_installudev handles it.
+	rm -f debian/openocd/usr/share/openocd/contrib/99-openocd.rules
+	@# Drop /usr/share/info/dir, it's generated at runtime.
+	rm -f debian/openocd/usr/share/info/dir
+	@# Drop .la files
+	rm -f `find debian/openocd -name '*.la'`
+
+clean::
+	@# Clean copied udev file.
+	rm -f debian/openocd.udev
+
+# For /usr/share/cdbs/1/rules/utils.mk sanity check.
+common-binary-post-install-arch:: list-missing
+

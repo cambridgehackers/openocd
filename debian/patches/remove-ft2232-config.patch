@@ -1,0 +1,171 @@
+From: Paul Fertser <fercerpav@gmail.com>
+Date: Mon, 28 Jul 2014 18:10:45 +0000 (+0400)
+Subject: tcl/board: fix all the remaining boards that were sourcing ft2232 configs
+X-Git-Url: http://openocd.zylin.com/gitweb?p=openocd.git;a=commitdiff_plain;h=e2b1f06f937e74bdf063c13da8a979e8a921ba5b
+
+tcl/board: fix all the remaining boards that were sourcing ft2232 configs
+
+This was reported in
+https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=751372 .
+
+Change-Id: I258f3d40593ff2966ce3ca61c13a23699d1b162f
+Signed-off-by: Paul Fertser <fercerpav@gmail.com>
+Reviewed-on: http://openocd.zylin.com/2230
+Tested-by: jenkins
+Reviewed-by: Andreas Fritiofson <andreas.fritiofson@gmail.com>
+---
+
+diff --git a/tcl/board/ek-lm3s1968.cfg b/tcl/board/ek-lm3s1968.cfg
+index 42f100f..8d990b1 100644
+--- a/tcl/board/ek-lm3s1968.cfg
++++ b/tcl/board/ek-lm3s1968.cfg
+@@ -11,7 +11,7 @@
+ # include the FT2232 interface config for on-board JTAG interface
+ # NOTE:  using the on-board FT2232 JTAG/SWD/SWO interface is optional!
+ # so is using in JTAG mode, as done here.
+-source [find interface/luminary.cfg]
++source [find interface/ftdi/luminary.cfg]
+ 
+ # include the target config
+ set WORKAREASIZE 0x2000
+diff --git a/tcl/board/ek-lm3s3748.cfg b/tcl/board/ek-lm3s3748.cfg
+index c95c21a..36ecfcd 100644
+--- a/tcl/board/ek-lm3s3748.cfg
++++ b/tcl/board/ek-lm3s3748.cfg
+@@ -6,7 +6,7 @@
+ 
+ # NOTE:  using the on-board FT2232 JTAG/SWD/SWO interface is optional!
+ # so is using it in JTAG mode, as done here.
+-source [find interface/luminary.cfg]
++source [find interface/ftdi/luminary.cfg]
+ 
+ # 20k working area
+ set WORKAREASIZE 0x4000
+diff --git a/tcl/board/ek-lm3s6965.cfg b/tcl/board/ek-lm3s6965.cfg
+index 428e853..c769669 100644
+--- a/tcl/board/ek-lm3s6965.cfg
++++ b/tcl/board/ek-lm3s6965.cfg
+@@ -6,7 +6,7 @@
+ 
+ # NOTE:  using the on-board FT2232 JTAG/SWD/SWO interface is optional!
+ # so is using it in JTAG mode, as done here.
+-source [find interface/luminary.cfg]
++source [find interface/ftdi/luminary.cfg]
+ 
+ # 20k working area
+ set WORKAREASIZE 0x5000
+diff --git a/tcl/board/ek-lm3s811-revb.cfg b/tcl/board/ek-lm3s811-revb.cfg
+index 82d1be4..8729f15 100644
+--- a/tcl/board/ek-lm3s811-revb.cfg
++++ b/tcl/board/ek-lm3s811-revb.cfg
+@@ -6,7 +6,7 @@
+ 
+ # NOTE: newer 811-EK boards (rev C and above) shouldn't use this.
+ # use board/ek-lm3s811.cfg
+-source [find interface/luminary-lm3s811.cfg]
++source [find interface/ftdi/luminary-lm3s811.cfg]
+ 
+ # include the target config
+ set WORKAREASIZE 0x2000
+diff --git a/tcl/board/ek-lm3s811.cfg b/tcl/board/ek-lm3s811.cfg
+index 6ea66b3..d7fe243 100644
+--- a/tcl/board/ek-lm3s811.cfg
++++ b/tcl/board/ek-lm3s811.cfg
+@@ -7,7 +7,7 @@
+ # NOTE:  using the on-board FT2232 JTAG/SWD/SWO interface is optional!
+ # so is using it in JTAG mode, as done here.
+ # NOTE:  older '811-EK boards (before rev C) shouldn't use this.
+-source [find interface/luminary.cfg]
++source [find interface/ftdi/luminary.cfg]
+ 
+ # include the target config
+ set WORKAREASIZE 0x2000
+diff --git a/tcl/board/ek-lm3s8962.cfg b/tcl/board/ek-lm3s8962.cfg
+index b7977da..d02ce44 100644
+--- a/tcl/board/ek-lm3s8962.cfg
++++ b/tcl/board/ek-lm3s8962.cfg
+@@ -6,7 +6,7 @@
+ 
+ # NOTE:  using the on-board FT2232 JTAG/SWD/SWO interface is optional!
+ # so is using it in JTAG mode, as done here.
+-source [find interface/luminary.cfg]
++source [find interface/ftdi/luminary.cfg]
+ 
+ # 64k working area
+ set WORKAREASIZE 0x10000
+diff --git a/tcl/board/ek-lm3s9b9x.cfg b/tcl/board/ek-lm3s9b9x.cfg
+index 1dd4231..6dd7b31 100644
+--- a/tcl/board/ek-lm3s9b9x.cfg
++++ b/tcl/board/ek-lm3s9b9x.cfg
+@@ -7,7 +7,7 @@
+ 
+ # NOTE:  using the bundled FT2232 JTAG/SWD/SWO interface is optional!
+ # so is using in JTAG mode, as done here.
+-source [find interface/luminary-icdi.cfg]
++source [find interface/ftdi/luminary-icdi.cfg]
+ 
+ set WORKAREASIZE 0x4000
+ set CHIPNAME lm3s9b9x
+diff --git a/tcl/board/ek-lm3s9d92.cfg b/tcl/board/ek-lm3s9d92.cfg
+index ed6f77a..a0253d6 100644
+--- a/tcl/board/ek-lm3s9d92.cfg
++++ b/tcl/board/ek-lm3s9d92.cfg
+@@ -6,7 +6,7 @@
+ 
+ # NOTE:  using the bundled FT2232 JTAG/SWD/SWO interface is optional!
+ # so is using in JTAG mode, as done here.
+-source [find interface/luminary-icdi.cfg]
++source [find interface/ftdi/luminary-icdi.cfg]
+ 
+ # 64k working area
+ set WORKAREASIZE 0x10000
+diff --git a/tcl/board/hitex_stm32-performancestick.cfg b/tcl/board/hitex_stm32-performancestick.cfg
+index 0ec4076..82fb169 100644
+--- a/tcl/board/hitex_stm32-performancestick.cfg
++++ b/tcl/board/hitex_stm32-performancestick.cfg
+@@ -2,7 +2,7 @@
+ 
+ reset_config trst_and_srst
+ 
+-source [find interface/stm32-stick.cfg]
++source [find interface/ftdi/stm32-stick.cfg]
+ 
+ set  CHIPNAME stm32_hitex
+ source [find target/stm32f1x.cfg]
+diff --git a/tcl/board/hitex_str9-comstick.cfg b/tcl/board/hitex_str9-comstick.cfg
+index f482fa2..be15331 100644
+--- a/tcl/board/hitex_str9-comstick.cfg
++++ b/tcl/board/hitex_str9-comstick.cfg
+@@ -2,7 +2,7 @@
+ # http://www.hitex.com/index.php?id=383
+ # This works for the STR9-comStick revisions STR912CS-A1 and STR912CS-A2.
+ 
+-source [find interface/hitex_str9-comstick.cfg]
++source [find interface/ftdi/hitex_str9-comstick.cfg]
+ 
+ # set jtag speed
+ adapter_khz 3000
+diff --git a/tcl/board/openrd.cfg b/tcl/board/openrd.cfg
+index 14593fd..1051c25 100644
+--- a/tcl/board/openrd.cfg
++++ b/tcl/board/openrd.cfg
+@@ -1,6 +1,6 @@
+ # Marvell OpenRD
+ 
+-source [find interface/openrd.cfg]
++source [find interface/ftdi/openrd.cfg]
+ source [find target/feroceon.cfg]
+ 
+ $_TARGETNAME configure \
+diff --git a/tcl/board/sheevaplug.cfg b/tcl/board/sheevaplug.cfg
+index e5e9f34..620e643 100644
+--- a/tcl/board/sheevaplug.cfg
++++ b/tcl/board/sheevaplug.cfg
+@@ -1,6 +1,6 @@
+ # Marvell SheevaPlug
+ 
+-source [find interface/sheevaplug.cfg]
++source [find interface/ftdi/sheevaplug.cfg]
+ source [find target/feroceon.cfg]
+ 
+ $_TARGETNAME configure \
