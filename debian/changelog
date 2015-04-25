@@ -1,3 +1,13 @@
+openocd (0.9.0~rc1-1) unstable; urgency=medium
+
+  * New upstream release
+  * Stop using embedded jimtcl, use packaged one instead
+  * Packaging imported to git
+    + Add gbp configuration for new repository
+    + Add related Vcs-* tags
+
+ -- Luca Bruno <lucab@debian.org>  Sat, 25 Apr 2015 22:55:38 +0200
+
 openocd (0.8.0-4) unstable; urgency=medium
 
   * Enable usb_blaster_libftdi on linux
