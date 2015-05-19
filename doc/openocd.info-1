@@ -1,8 +1,8 @@
 This is openocd.info, produced by makeinfo version 5.2 from
 openocd.texi.
 
-This User's Guide documents release 0.9.0-rc1, dated 24 April 2015, of
-the Open On-Chip Debugger (OpenOCD).
+This User's Guide documents release 0.9.0, dated 18 May 2015, of the
+Open On-Chip Debugger (OpenOCD).
 
    * Copyright (C) 2008 The OpenOCD Project
    * Copyright (C) 2007-2008 Spencer Oliver <spen@spen-soft.co.uk>
@@ -27,8 +27,8 @@ File: openocd.info,  Node: Top,  Next: About,  Up: (dir)
 OpenOCD User's Guide
 ********************
 
-This User's Guide documents release 0.9.0-rc1, dated 24 April 2015, of
-the Open On-Chip Debugger (OpenOCD).
+This User's Guide documents release 0.9.0, dated 18 May 2015, of the
+Open On-Chip Debugger (OpenOCD).
 
    * Copyright (C) 2008 The OpenOCD Project
    * Copyright (C) 2007-2008 Spencer Oliver <spen@spen-soft.co.uk>
@@ -59,7 +59,6 @@ the Open On-Chip Debugger (OpenOCD).
 * CPU Configuration::                CPU Configuration
 * Flash Commands::                   Flash Commands
 * Flash Programming::                Flash Programming
-* NAND Flash Commands::              NAND Flash Commands
 * PLD/FPGA Commands::                PLD/FPGA Commands
 * General Commands::                 General Commands
 * Architecture and Core Commands::   Architecture and Core Commands
@@ -1219,60 +1218,15 @@ to get a new board working smoothly.  It provides guidelines for
 creating those files.
 
 You should find the following directories under $(INSTALLDIR)/scripts,
-with files including the ones listed here.  Use them as-is where you
-can; or as models for new files.
-   * 'interface' ...  These are for debug adapters.  Files that
-     configure JTAG adapters go here.
-          $ ls interface -R
-          interface/:
-          altera-usb-blaster.cfg    hilscher_nxhx50_re.cfg     openocd-usb-hs.cfg
-          arm-jtag-ew.cfg           hitex_str9-comstick.cfg    openrd.cfg
-          at91rm9200.cfg            icebear.cfg                osbdm.cfg
-          axm0432.cfg               jlink.cfg                  parport.cfg
-          busblaster.cfg            jtagkey2.cfg               parport_dlc5.cfg
-          buspirate.cfg             jtagkey2p.cfg              redbee-econotag.cfg
-          calao-usb-a9260-c01.cfg   jtagkey.cfg                redbee-usb.cfg
-          calao-usb-a9260-c02.cfg   jtagkey-tiny.cfg           rlink.cfg
-          calao-usb-a9260.cfg       jtag-lock-pick_tiny_2.cfg  sheevaplug.cfg
-          chameleon.cfg             kt-link.cfg                signalyzer.cfg
-          cortino.cfg               lisa-l.cfg                 signalyzer-h2.cfg
-          digilent-hs1.cfg          luminary.cfg               signalyzer-h4.cfg
-          dlp-usb1232h.cfg          luminary-icdi.cfg          signalyzer-lite.cfg
-          dummy.cfg                 luminary-lm3s811.cfg       stlink-v1.cfg
-          estick.cfg                minimodule.cfg             stlink-v2.cfg
-          flashlink.cfg             neodb.cfg                  stm32-stick.cfg
-          flossjtag.cfg             ngxtech.cfg                sysfsgpio-raspberrypi.cfg
-          flossjtag-noeeprom.cfg    olimex-arm-usb-ocd.cfg     ti-icdi.cfg
-          flyswatter2.cfg           olimex-arm-usb-ocd-h.cfg   turtelizer2.cfg
-          flyswatter.cfg            olimex-arm-usb-tiny-h.cfg  ulink.cfg
-          ftdi                      olimex-jtag-tiny.cfg       usb-jtag.cfg
-          hilscher_nxhx10_etm.cfg   oocdlink.cfg               usbprog.cfg
-          hilscher_nxhx500_etm.cfg  opendous.cfg               vpaclink.cfg
-          hilscher_nxhx500_re.cfg   opendous_ftdi.cfg          vsllink.cfg
-          hilscher_nxhx50_etm.cfg   openocd-usb.cfg            xds100v2.cfg
-
-          interface/ftdi:
-          axm0432.cfg               hitex_str9-comstick.cfg    olimex-jtag-tiny.cfg
-          calao-usb-a9260-c01.cfg   icebear.cfg                oocdlink.cfg
-          calao-usb-a9260-c02.cfg   jtagkey2.cfg               opendous_ftdi.cfg
-          cortino.cfg               jtagkey2p.cfg              openocd-usb.cfg
-          dlp-usb1232h.cfg          jtagkey.cfg                openocd-usb-hs.cfg
-          dp_busblaster.cfg         jtag-lock-pick_tiny_2.cfg  openrd.cfg
-          flossjtag.cfg             kt-link.cfg                redbee-econotag.cfg
-          flossjtag-noeeprom.cfg    lisa-l.cfg                 redbee-usb.cfg
-          flyswatter2.cfg           luminary.cfg               sheevaplug.cfg
-          flyswatter.cfg            luminary-icdi.cfg          signalyzer.cfg
-          gw16042.cfg               luminary-lm3s811.cfg       signalyzer-lite.cfg
-          hilscher_nxhx10_etm.cfg   minimodule.cfg             stm32-stick.cfg
-          hilscher_nxhx500_etm.cfg  neodb.cfg                  turtelizer2-revB.cfg
-          hilscher_nxhx500_re.cfg   ngxtech.cfg                turtelizer2-revC.cfg
-          hilscher_nxhx50_etm.cfg   olimex-arm-usb-ocd.cfg     vpaclink.cfg
-          hilscher_nxhx50_re.cfg    olimex-arm-usb-ocd-h.cfg   xds100v2.cfg
-          hitex_lpc1768stick.cfg    olimex-arm-usb-tiny-h.cfg
-          $
-   * 'board' ...  think Circuit Board, PWA, PCB, they go by many names.
+with config files maintained upstream.  Use them as-is where you can; or
+as models for new files.
+   * 'interface' ...  These are for debug adapters.  Files that specify
+     configuration to use specific JTAG, SWD and other adapters go here.
+   * 'board' ...  Think Circuit Board, PWA, PCB, they go by many names.
      Board files contain initialization items that are specific to a
-     board.  They reuse target configuration files, since the same
+     board.
+
+     They reuse target configuration files, since the same
      microprocessor chips are used on many boards, but support for
      external parts varies widely.  For example, the SDRAM
      initialization sequence for the board, or the type of external
@@ -1280,163 +1234,11 @@ can; or as models for new files.
      enable that external flash or SDRAM should be found in the board
      file.  Boards may also contain multiple targets: two CPUs; or a CPU
      and an FPGA.
-          $ ls board
-          actux3.cfg                        lpc1850_spifi_generic.cfg
-          am3517evm.cfg                     lpc4350_spifi_generic.cfg
-          arm_evaluator7t.cfg               lubbock.cfg
-          at91cap7a-stk-sdram.cfg           mcb1700.cfg
-          at91eb40a.cfg                     microchip_explorer16.cfg
-          at91rm9200-dk.cfg                 mini2440.cfg
-          at91rm9200-ek.cfg                 mini6410.cfg
-          at91sam9261-ek.cfg                netgear-dg834v3.cfg
-          at91sam9263-ek.cfg                olimex_LPC2378STK.cfg
-          at91sam9g20-ek.cfg                olimex_lpc_h2148.cfg
-          atmel_at91sam7s-ek.cfg            olimex_sam7_ex256.cfg
-          atmel_at91sam9260-ek.cfg          olimex_sam9_l9260.cfg
-          atmel_at91sam9rl-ek.cfg           olimex_stm32_h103.cfg
-          atmel_sam3n_ek.cfg                olimex_stm32_h107.cfg
-          atmel_sam3s_ek.cfg                olimex_stm32_p107.cfg
-          atmel_sam3u_ek.cfg                omap2420_h4.cfg
-          atmel_sam3x_ek.cfg                open-bldc.cfg
-          atmel_sam4s_ek.cfg                openrd.cfg
-          balloon3-cpu.cfg                  osk5912.cfg
-          colibri.cfg                       phone_se_j100i.cfg
-          crossbow_tech_imote2.cfg          phytec_lpc3250.cfg
-          csb337.cfg                        pic-p32mx.cfg
-          csb732.cfg                        propox_mmnet1001.cfg
-          da850evm.cfg                      pxa255_sst.cfg
-          digi_connectcore_wi-9c.cfg        redbee.cfg
-          diolan_lpc4350-db1.cfg            rsc-w910.cfg
-          dm355evm.cfg                      sheevaplug.cfg
-          dm365evm.cfg                      smdk6410.cfg
-          dm6446evm.cfg                     spear300evb.cfg
-          efikamx.cfg                       spear300evb_mod.cfg
-          eir.cfg                           spear310evb20.cfg
-          ek-lm3s1968.cfg                   spear310evb20_mod.cfg
-          ek-lm3s3748.cfg                   spear320cpu.cfg
-          ek-lm3s6965.cfg                   spear320cpu_mod.cfg
-          ek-lm3s811.cfg                    steval_pcc010.cfg
-          ek-lm3s811-revb.cfg               stm320518_eval_stlink.cfg
-          ek-lm3s8962.cfg                   stm32100b_eval.cfg
-          ek-lm3s9b9x.cfg                   stm3210b_eval.cfg
-          ek-lm3s9d92.cfg                   stm3210c_eval.cfg
-          ek-lm4f120xl.cfg                  stm3210e_eval.cfg
-          ek-lm4f232.cfg                    stm3220g_eval.cfg
-          embedded-artists_lpc2478-32.cfg   stm3220g_eval_stlink.cfg
-          ethernut3.cfg                     stm3241g_eval.cfg
-          glyn_tonga2.cfg                   stm3241g_eval_stlink.cfg
-          hammer.cfg                        stm32f0discovery.cfg
-          hilscher_nxdb500sys.cfg           stm32f3discovery.cfg
-          hilscher_nxeb500hmi.cfg           stm32f4discovery.cfg
-          hilscher_nxhx10.cfg               stm32ldiscovery.cfg
-          hilscher_nxhx500.cfg              stm32vldiscovery.cfg
-          hilscher_nxhx50.cfg               str910-eval.cfg
-          hilscher_nxsb100.cfg              telo.cfg
-          hitex_lpc1768stick.cfg            ti_am335xevm.cfg
-          hitex_lpc2929.cfg                 ti_beagleboard.cfg
-          hitex_stm32-performancestick.cfg  ti_beagleboard_xm.cfg
-          hitex_str9-comstick.cfg           ti_beaglebone.cfg
-          iar_lpc1768.cfg                   ti_blaze.cfg
-          iar_str912_sk.cfg                 ti_pandaboard.cfg
-          icnova_imx53_sodimm.cfg           ti_pandaboard_es.cfg
-          icnova_sam9g45_sodimm.cfg         topas910.cfg
-          imx27ads.cfg                      topasa900.cfg
-          imx27lnst.cfg                     twr-k60f120m.cfg
-          imx28evk.cfg                      twr-k60n512.cfg
-          imx31pdk.cfg                      tx25_stk5.cfg
-          imx35pdk.cfg                      tx27_stk5.cfg
-          imx53loco.cfg                     unknown_at91sam9260.cfg
-          keil_mcb1700.cfg                  uptech_2410.cfg
-          keil_mcb2140.cfg                  verdex.cfg
-          kwikstik.cfg                      voipac.cfg
-          linksys_nslu2.cfg                 voltcraft_dso-3062c.cfg
-          lisa-l.cfg                        x300t.cfg
-          logicpd_imx27.cfg                 zy1000.cfg
-          $
-   * 'target' ...  think chip.  The "target" directory represents the
+   * 'target' ...  Think chip.  The "target" directory represents the
      JTAG TAPs on a chip which OpenOCD should control, not a board.  Two
      common types of targets are ARM chips and FPGA or CPLD chips.  When
      a chip has multiple TAPs (maybe it has both ARM and DSP cores), the
      target config file defines all of them.
-          $ ls target
-          aduc702x.cfg                       lpc1764.cfg
-          am335x.cfg                         lpc1765.cfg
-          amdm37x.cfg                        lpc1766.cfg
-          ar71xx.cfg                         lpc1767.cfg
-          at32ap7000.cfg                     lpc1768.cfg
-          at91r40008.cfg                     lpc1769.cfg
-          at91rm9200.cfg                     lpc1788.cfg
-          at91sam3ax_4x.cfg                  lpc17xx.cfg
-          at91sam3ax_8x.cfg                  lpc1850.cfg
-          at91sam3ax_xx.cfg                  lpc2103.cfg
-          at91sam3nXX.cfg                    lpc2124.cfg
-          at91sam3sXX.cfg                    lpc2129.cfg
-          at91sam3u1c.cfg                    lpc2148.cfg
-          at91sam3u1e.cfg                    lpc2294.cfg
-          at91sam3u2c.cfg                    lpc2378.cfg
-          at91sam3u2e.cfg                    lpc2460.cfg
-          at91sam3u4c.cfg                    lpc2478.cfg
-          at91sam3u4e.cfg                    lpc2900.cfg
-          at91sam3uxx.cfg                    lpc2xxx.cfg
-          at91sam3XXX.cfg                    lpc3131.cfg
-          at91sam4sd32x.cfg                  lpc3250.cfg
-          at91sam4sXX.cfg                    lpc4350.cfg
-          at91sam4XXX.cfg                    lpc4350.cfg.orig
-          at91sam7se512.cfg                  mc13224v.cfg
-          at91sam7sx.cfg                     nuc910.cfg
-          at91sam7x256.cfg                   omap2420.cfg
-          at91sam7x512.cfg                   omap3530.cfg
-          at91sam9260.cfg                    omap4430.cfg
-          at91sam9260_ext_RAM_ext_flash.cfg  omap4460.cfg
-          at91sam9261.cfg                    omap5912.cfg
-          at91sam9263.cfg                    omapl138.cfg
-          at91sam9.cfg                       pic32mx.cfg
-          at91sam9g10.cfg                    pxa255.cfg
-          at91sam9g20.cfg                    pxa270.cfg
-          at91sam9g45.cfg                    pxa3xx.cfg
-          at91sam9rl.cfg                     readme.txt
-          atmega128.cfg                      samsung_s3c2410.cfg
-          avr32.cfg                          samsung_s3c2440.cfg
-          c100.cfg                           samsung_s3c2450.cfg
-          c100config.tcl                     samsung_s3c4510.cfg
-          c100helper.tcl                     samsung_s3c6410.cfg
-          c100regs.tcl                       sharp_lh79532.cfg
-          cs351x.cfg                         sim3x.cfg
-          davinci.cfg                        smp8634.cfg
-          dragonite.cfg                      spear3xx.cfg
-          dsp56321.cfg                       stellaris.cfg
-          dsp568013.cfg                      stellaris_icdi.cfg
-          dsp568037.cfg                      stm32f0x_stlink.cfg
-          efm32_stlink.cfg                   stm32f1x.cfg
-          epc9301.cfg                        stm32f1x_stlink.cfg
-          faux.cfg                           stm32f2x.cfg
-          feroceon.cfg                       stm32f2x_stlink.cfg
-          fm3.cfg                            stm32f3x.cfg
-          hilscher_netx10.cfg                stm32f3x_stlink.cfg
-          hilscher_netx500.cfg               stm32f4x.cfg
-          hilscher_netx50.cfg                stm32f4x_stlink.cfg
-          icepick.cfg                        stm32l.cfg
-          imx21.cfg                          stm32lx_dual_bank.cfg
-          imx25.cfg                          stm32lx_stlink.cfg
-          imx27.cfg                          stm32_stlink.cfg
-          imx28.cfg                          stm32w108_stlink.cfg
-          imx31.cfg                          stm32xl.cfg
-          imx35.cfg                          str710.cfg
-          imx51.cfg                          str730.cfg
-          imx53.cfg                          str750.cfg
-          imx6.cfg                           str912.cfg
-          imx.cfg                            swj-dp.tcl
-          is5114.cfg                         test_reset_syntax_error.cfg
-          ixp42x.cfg                         test_syntax_error.cfg
-          k40.cfg                            ti-ar7.cfg
-          k60.cfg                            ti_calypso.cfg
-          lpc1751.cfg                        ti_dm355.cfg
-          lpc1752.cfg                        ti_dm365.cfg
-          lpc1754.cfg                        ti_dm6446.cfg
-          lpc1756.cfg                        tmpa900.cfg
-          lpc1758.cfg                        tmpa910.cfg
-          lpc1759.cfg                        u8500.cfg
-          lpc1763.cfg
    * _more_ ...  browse for other library files which may be useful.
      For example, there are various generic and CPU-specific utilities.
 
@@ -2205,7 +2007,7 @@ targetevents, about configuring target-specific event handling.
  -- Config Command: gdb_target_description ('enable'|'disable')
      Set to 'enable' to cause OpenOCD to send the target descriptions to
      gdb via qXfer:features:read packet.  The default behaviour is
-     'disable'.
+     'enable'.
 
  -- Command: gdb_save_tdesc
      Saves the target descripton file to the local file system.
@@ -2634,15 +2436,25 @@ when OpenOCD is configured, in order to be made available at run time.
           The following VID/PID is for Kolja Waschk's USB JTAG:
                usb_blaster_vid_pid 0x16C0 0x06AD
 
-      -- Command: usb_blaster ('pin6'|'pin8') ('0'|'1')
-          Sets the state of the unused GPIO pins on USB-Blasters (pins 6
-          and 8 on the female JTAG header).  These pins can be used as
-          SRST and/or TRST provided the appropriate connections are made
-          on the target board.
+      -- Command: usb_blaster_pin ('pin6'|'pin8') ('0'|'1'|'s'|'t')
+          Sets the state or function of the unused GPIO pins on
+          USB-Blasters (pins 6 and 8 on the female JTAG header).  These
+          pins can be used as SRST and/or TRST provided the appropriate
+          connections are made on the target board.
 
-          For example, to use pin 6 as SRST (as with an AVR board):
-               $_TARGETNAME configure -event reset-assert \
-                     "usb_blaster pin6 1; wait 1; usb_blaster pin6 0"
+          For example, to use pin 6 as SRST:
+               usb_blaster_pin pin6 s
+               reset_config srst_only
+
+      -- Command: usb_blaster_lowlevel_driver
+               ('ftdi'|'ftd2xx'|'ublast2')
+          Chooses the low level access method for the adapter.  If not
+          specified, 'ftdi' is selected unless it wasn't enabled during
+          the configure stage.  USB-Blaster II needs 'ublast2'.
+
+      -- Command: usb_blaster_firmware PATH
+          This command specifies PATH to access USB-Blaster II firmware
+          image.  To be used with USB-Blaster II only.
 
  -- Interface Driver: gw16012
      Gateworks GW16012 JTAG programmer.  This has one driver-specific
@@ -3758,17 +3570,17 @@ command to list them.
           It is based on the ARMv5 architecture.
         * 'openrisc' - this is an OpenRISC 1000 core.  The current
           implementation supports three JTAG TAP cores:
-             - 'OpenCores TAP' (See:
-               _http://opencores.org/project,jtag_)
+             - 'OpenCores TAP' (See: jtag
+               (http://opencores.org/project))
              - 'Altera Virtual JTAG TAP' (See:
-               _http://www.altera.com/literature/ug/ug_virtualjtag.pdf_)
+               <http://www.altera.com/literature/ug/ug_virtualjtag.pdf>)
              - 'Xilinx BSCAN_* virtual JTAG interface' (See:
-               _http://www.xilinx.com/support/documentation/sw_manuals/xilinx14_2/spartan6_hdl.pdf_)
+               <http://www.xilinx.com/support/documentation/sw_manuals/xilinx14_2/spartan6_hdl.pdf>)
           And two debug interfaces cores:
-             - 'Advanced debug interface' (See:
-               _http://opencores.org/project,adv_debug_sys_)
-             - 'SoC Debug Interface' (See:
-               _http://opencores.org/project,dbg_interface_)
+             - 'Advanced debug interface' (See: adv_debug_sys
+               (http://opencores.org/project))
+             - 'SoC Debug Interface' (See: dbg_interface
+               (http://opencores.org/project))
 
 To avoid being confused by the variety of ARM based cores, remember this
 key point: _ARM is a technology licencing company_.  (See:
@@ -4029,7 +3841,8 @@ creates and invokes a small procedure while the other inlines it.
      mychip.cpu configure -event gdb-attach my_attach_proc
      mychip.cpu configure -event gdb-attach {
          echo "Reset..."
-         # To make flash probe and gdb load to flash work we need a reset init.
+         # To make flash probe and gdb load to flash work
+         # we need a reset init.
          reset init
      }
 
@@ -4330,6 +4143,23 @@ As noted above, the 'flash bank' command requires a driver name, and
 allows driver-specific options and behaviors.  Some drivers also
 activate driver-specific commands.
 
+ -- Flash Driver: virtual
+     This is a special driver that maps a previously defined bank to
+     another address.  All bank settings will be copied from the master
+     physical bank.
+
+     The VIRTUAL driver defines one mandatory parameters,
+
+        * MASTER_BANK The bank that this virtual address refers to.
+
+     So in the following example addresses 0xbfc00000 and 0x9fc00000
+     refer to the flash bank defined at address 0x1fc00000.  Any cmds
+     executed on the virtual banks are actually performed on the
+     physical banks.
+          flash bank $_FLASHNAME pic32mx 0x1fc00000 0 0 0 $_TARGETNAME
+          flash bank vbank0 virtual 0xbfc00000 0 0 0 $_TARGETNAME $_FLASHNAME
+          flash bank vbank1 virtual 0x9fc00000 0 0 0 $_TARGETNAME $_FLASHNAME
+
 12.4.1 External Flash
 ---------------------
 
@@ -4400,6 +4230,15 @@ activate driver-specific commands.
      automatically.
 
           flash bank $_FLASHNAME stmsmi 0xf8000000 0 0 0 $_TARGETNAME
+
+ -- Flash Driver: mrvlqspi
+     This driver supports QSPI flash controller of Marvell's Wireless
+     Microcontroller platform.
+
+     The flash size is autodetected based on the table of known JEDEC
+     IDs hardcoded in the OpenOCD sources.
+
+          flash bank $_FLASHNAME mrvlqspi 0x0 0 0 0 $_TARGETNAME 0x46010000
 
 12.4.2 Internal Flash (Microcontrollers)
 ----------------------------------------
@@ -4900,7 +4739,8 @@ activate driver-specific commands.
      The STR7X driver defines one mandatory parameter, VARIANT, which is
      either 'STR71x', 'STR73x' or 'STR75x'.
 
-          flash bank $_FLASHNAME str7x 0x40000000 0x00040000 0 0 $_TARGETNAME STR71x
+          flash bank $_FLASHNAME str7x \
+                0x40000000 0x00040000 0 0 $_TARGETNAME STR71x
 
       -- Command: str7x disable_jtag bank
           Activate the Debug/Readout protection mechanism for the
@@ -4924,110 +4764,46 @@ activate driver-specific commands.
              * BBADR - Boot Bank Start Address register
              * NBBADR - Boot Bank Start Address register
 
- -- Flash Driver: tms470
-     Most members of the TMS470 microcontroller family from Texas
-     Instruments include internal flash and use ARM7TDMI cores.  This
-     driver doesn't require the chip and bus width to be specified.
-
-     Some tms470-specific commands are defined:
-
-      -- Command: tms470 flash_keyset key0 key1 key2 key3
-          Saves programming keys in a register, to enable flash erase
-          and write commands.
-
-      -- Command: tms470 osc_mhz clock_mhz
-          Reports the clock speed, which is used to calculate timings.
-
-      -- Command: tms470 plldis (0|1)
-          Disables (1) or enables (0) use of the PLL to speed up the
-          flash clock.
-
- -- Flash Driver: virtual
-     This is a special driver that maps a previously defined bank to
-     another address.  All bank settings will be copied from the master
-     physical bank.
-
-     The VIRTUAL driver defines one mandatory parameters,
-
-        * MASTER_BANK The bank that this virtual address refers to.
-
-     So in the following example addresses 0xbfc00000 and 0x9fc00000
-     refer to the flash bank defined at address 0x1fc00000.  Any cmds
-     executed on the virtual banks are actually performed on the
-     physical banks.
-          flash bank $_FLASHNAME pic32mx 0x1fc00000 0 0 0 $_TARGETNAME
-          flash bank vbank0 virtual 0xbfc00000 0 0 0 $_TARGETNAME $_FLASHNAME
-          flash bank vbank1 virtual 0x9fc00000 0 0 0 $_TARGETNAME $_FLASHNAME
-
- -- Flash Driver: fm3
-     All members of the FM3 microcontroller family from Fujitsu include
-     internal flash and use ARM Cortex M3 cores.  The FM3 driver uses
-     the TARGET parameter to select the correct bank config, it can
-     currently be one of the following: 'mb9bfxx1.cpu', 'mb9bfxx2.cpu',
-     'mb9bfxx3.cpu', 'mb9bfxx4.cpu', 'mb9bfxx5.cpu' or 'mb9bfxx6.cpu'.
-
-          flash bank $_FLASHNAME fm3 0 0 0 0 $_TARGETNAME
-
- -- Flash Driver: sim3x
-     All members of the SiM3 microcontroller family from Silicon
-     Laboratories include internal flash and use ARM Cortex M3 cores.
-     It supports both JTAG and SWD interface.  The SIM3X driver tries to
-     probe the device to auto detect the MCU. If this failes, it will
-     use the SIZE parameter as the size of flash bank.
-
-          flash bank $_FLASHNAME sim3x 0 $_CPUROMSIZE 0 0 $_TARGETNAME
-
-     There are 2 commands defined in the SIM3X driver:
-
-      -- Command: sim3x mass_erase
-          Erases the complete flash.  This is used to unlock the flash.
-          And this command is only possible when using the SWD
-          interface.
-
-      -- Command: sim3x lock
-          Lock the flash.  To unlock use the 'sim3x mass_erase' command.
-
-12.4.3 str9xpec driver
-----------------------
-
-Here is some background info to help you better understand how this
-driver works.  OpenOCD has two flash drivers for the str9:
-  1. Standard driver 'str9x' programmed via the str9 core.  Normally
-     used for flash programming as it is faster than the 'str9xpec'
-     driver.
-  2. Direct programming 'str9xpec' using the flash controller.  This is
-     an ISC compilant (IEEE 1532) tap connected in series with the str9
-     core.  The str9 core does not need to be running to program using
-     this flash driver.  Typical use for this driver is
-     locking/unlocking the target and programming the option bytes.
-
-Before we run any commands using the 'str9xpec' driver we must first
-disable the str9 core.  This example assumes the 'str9xpec' driver has
-been configured for flash bank 0.
-     # assert srst, we do not want core running
-     # while accessing str9xpec flash driver
-     jtag_reset 0 1
-     # turn off target polling
-     poll off
-     # disable str9 core
-     str9xpec enable_turbo 0
-     # read option bytes
-     str9xpec options_read 0
-     # re-enable str9 core
-     str9xpec disable_turbo 0
-     poll on
-     reset halt
-The above example will read the str9 option bytes.  When performing a
-unlock remember that you will not be able to halt the str9 - it has been
-locked.  Halting the core is not required for the 'str9xpec' driver as
-mentioned above, just issue the commands above manually or from a telnet
-prompt.
-
  -- Flash Driver: str9xpec
+
      Only use this driver for locking/unlocking the device or
      configuring the option bytes.  Use the standard str9 driver for
      programming.  Before using the flash commands the turbo mode must
      be enabled using the 'str9xpec enable_turbo' command.
+
+     Here is some background info to help you better understand how this
+     driver works.  OpenOCD has two flash drivers for the str9:
+       1. Standard driver 'str9x' programmed via the str9 core.
+          Normally used for flash programming as it is faster than the
+          'str9xpec' driver.
+       2. Direct programming 'str9xpec' using the flash controller.
+          This is an ISC compilant (IEEE 1532) tap connected in series
+          with the str9 core.  The str9 core does not need to be running
+          to program using this flash driver.  Typical use for this
+          driver is locking/unlocking the target and programming the
+          option bytes.
+
+     Before we run any commands using the 'str9xpec' driver we must
+     first disable the str9 core.  This example assumes the 'str9xpec'
+     driver has been configured for flash bank 0.
+          # assert srst, we do not want core running
+          # while accessing str9xpec flash driver
+          jtag_reset 0 1
+          # turn off target polling
+          poll off
+          # disable str9 core
+          str9xpec enable_turbo 0
+          # read option bytes
+          str9xpec options_read 0
+          # re-enable str9 core
+          str9xpec disable_turbo 0
+          poll on
+          reset halt
+     The above example will read the str9 option bytes.  When performing
+     a unlock remember that you will not be able to halt the str9 - it
+     has been locked.  Halting the core is not required for the
+     'str9xpec' driver as mentioned above, just issue the commands above
+     manually or from a telnet prompt.
 
      Several str9xpec-specific commands are defined:
 
@@ -5066,6 +4842,52 @@ prompt.
       -- Command: str9xpec unlock num
           unlock str9 device.
 
+ -- Flash Driver: tms470
+     Most members of the TMS470 microcontroller family from Texas
+     Instruments include internal flash and use ARM7TDMI cores.  This
+     driver doesn't require the chip and bus width to be specified.
+
+     Some tms470-specific commands are defined:
+
+      -- Command: tms470 flash_keyset key0 key1 key2 key3
+          Saves programming keys in a register, to enable flash erase
+          and write commands.
+
+      -- Command: tms470 osc_mhz clock_mhz
+          Reports the clock speed, which is used to calculate timings.
+
+      -- Command: tms470 plldis (0|1)
+          Disables (1) or enables (0) use of the PLL to speed up the
+          flash clock.
+
+ -- Flash Driver: fm3
+     All members of the FM3 microcontroller family from Fujitsu include
+     internal flash and use ARM Cortex M3 cores.  The FM3 driver uses
+     the TARGET parameter to select the correct bank config, it can
+     currently be one of the following: 'mb9bfxx1.cpu', 'mb9bfxx2.cpu',
+     'mb9bfxx3.cpu', 'mb9bfxx4.cpu', 'mb9bfxx5.cpu' or 'mb9bfxx6.cpu'.
+
+          flash bank $_FLASHNAME fm3 0 0 0 0 $_TARGETNAME
+
+ -- Flash Driver: sim3x
+     All members of the SiM3 microcontroller family from Silicon
+     Laboratories include internal flash and use ARM Cortex M3 cores.
+     It supports both JTAG and SWD interface.  The SIM3X driver tries to
+     probe the device to auto detect the MCU. If this failes, it will
+     use the SIZE parameter as the size of flash bank.
+
+          flash bank $_FLASHNAME sim3x 0 $_CPUROMSIZE 0 0 $_TARGETNAME
+
+     There are 2 commands defined in the SIM3X driver:
+
+      -- Command: sim3x mass_erase
+          Erases the complete flash.  This is used to unlock the flash.
+          And this command is only possible when using the SWD
+          interface.
+
+      -- Command: sim3x lock
+          Lock the flash.  To unlock use the 'sim3x mass_erase' command.
+
  -- Flash Driver: nrf51
      All members of the nRF51 microcontroller families from Nordic
      Semiconductor include internal flash and use ARM Cortex-M0 core.
@@ -5080,21 +4902,13 @@ prompt.
           command works only for chips that do not have factory
           pre-programmed region 0 code.
 
- -- Flash Driver: mrvlqspi
-     This driver supports QSPI flash controller of Marvell's Wireless
-     Microcontroller platform.
-
-     The flash size is autodetected based on the table of known JEDEC
-     IDs hardcoded in the OpenOCD sources.
-
-          flash bank $_FLASHNAME mrvlqspi 0x0 0 0 0 $_TARGETNAME 0x46010000
-
  -- Flash Driver: mdr
      This drivers handles the integrated NOR flash on Milandr Cortex-M
      based controllers.  A known limitation is that the Info memory
      can't be read or verified as it's not memory mapped.
 
-          flash bank <name> mdr <base> <size> 0 0 <target#> TYPE PAGE_COUNT SEC_COUNT
+          flash bank <name> mdr <base> <size> \
+                0 0 <target#> TYPE PAGE_COUNT SEC_COUNT
 
         * TYPE - 0 for main memory, 1 for info memory
         * PAGE_COUNT - total number of pages
@@ -5102,112 +4916,15 @@ prompt.
 
      Example usage:
           if { [info exists IMEMORY] && [string equal $IMEMORY true] } {
-             flash bank ${_CHIPNAME}_info.flash mdr 0x00000000 0x01000 0 0 $_TARGETNAME 1 1 4
+             flash bank ${_CHIPNAME}_info.flash mdr 0x00000000 0x01000 \
+                   0 0 $_TARGETNAME 1 1 4
           } else {
-             flash bank $_CHIPNAME.flash mdr 0x00000000 0x20000 0 0 $_TARGETNAME 0 32 4
+             flash bank $_CHIPNAME.flash mdr 0x00000000 0x20000 \
+                   0 0 $_TARGETNAME 0 32 4
           }
 
-12.5 mFlash
-===========
-
-12.5.1 mFlash Configuration
----------------------------
-
- -- Config Command: mflash bank soc base RST_pin target
-     Configures a mflash for SOC host bank at address BASE.  The pin
-     number format depends on the host GPIO naming convention.
-     Currently, the mflash driver supports s3c2440 and pxa270.
-
-     Example for s3c2440 mflash where RST PIN is GPIO B1:
-
-          mflash bank $_FLASHNAME s3c2440 0x10000000 1b 0
-
-     Example for pxa270 mflash where RST PIN is GPIO 43:
-
-          mflash bank $_FLASHNAME pxa270 0x08000000 43 0
-
-12.5.2 mFlash commands
-----------------------
-
- -- Command: mflash config pll frequency
-     Configure mflash PLL. The FREQUENCY is the mflash input frequency,
-     in Hz.  Issuing this command will erase mflash's whole internal
-     nand and write new pll.  After this command, mflash needs
-     power-on-reset for normal operation.  If pll was newly configured,
-     storage and boot(optional) info also need to be update.
-
- -- Command: mflash config boot
-     Configure bootable option.  If bootable option is set, mflash offer
-     the first 8 sectors (4kB) for boot.
-
- -- Command: mflash config storage
-     Configure storage information.  For the normal storage operation,
-     this information must be written.
-
- -- Command: mflash dump num filename offset size
-     Dump SIZE bytes, starting at OFFSET bytes from the beginning of the
-     bank NUM, to the file named FILENAME.
-
- -- Command: mflash probe
-     Probe mflash.
-
- -- Command: mflash write num filename offset
-     Write the binary file FILENAME to mflash bank NUM, starting at
-     OFFSET bytes from the beginning of the bank.
-
-   ---------- Footnotes ----------
-
-   (1) Currently there is a 'stellaris mass_erase' command.  That seems
-pointless since the same effect can be had using the standard 'flash
-erase_address' command.
-
-   (2) Currently there is a 'stm32f1x mass_erase' command.  That seems
-pointless since the same effect can be had using the standard 'flash
-erase_address' command.
-
-
-File: openocd.info,  Node: Flash Programming,  Next: NAND Flash Commands,  Prev: Flash Commands,  Up: Top
-
-13 Flash Programming
-********************
-
-OpenOCD implements numerous ways to program the target flash, whether
-internal or external.  Programming can be acheived by either using GDB
-*note Programming using GDB: programmingusinggdb, or using the cmds
-given in *note Flash Programming Commands: flashprogrammingcommands.
-
-
-To simplify using the flash cmds directly a jimtcl script is available
-that handles the programming and verify stage.  OpenOCD will
-program/verify/reset the target and optionally shutdown.
-
-The script is executed as follows and by default the following actions
-will be peformed.
-  1. 'init' is executed.
-  2. 'reset init' is called to reset and halt the target, any 'reset
-     init' scripts are executed.
-  3. 'flash write_image' is called to erase and write any flash using
-     the filename given.
-  4. 'verify_image' is called if 'verify' parameter is given.
-  5. 'reset run' is called if 'reset' parameter is given.
-  6. OpenOCD is shutdown if 'exit' parameter is given.
-
-An example of usage is given below.  *Note program::.
-
-     # program and verify using elf/hex/s19. verify and reset
-     # are optional parameters
-     openocd -f board/stm32f3discovery.cfg \
-     	-c "program filename.elf verify reset exit"
-
-     # binary files need the flash address passing
-     openocd -f board/stm32f3discovery.cfg \
-     	-c "program filename.bin exit 0x08000000"
-
-
-File: openocd.info,  Node: NAND Flash Commands,  Next: PLD/FPGA Commands,  Prev: Flash Programming,  Up: Top
-
-14 NAND Flash Commands
-**********************
+12.5 NAND Flash Commands
+========================
 
 Compared to NOR or SPI flash, NAND devices are inexpensive and high
 density.  Today's NAND chips, and multi-chip modules, commonly hold
@@ -5261,8 +4978,8 @@ larger than 0xffffffff, the largest 32-bit unsigned integer.)  Some
 larger devices will work, since they are actually multi-chip modules
 with two smaller chips and individual chipselect lines.
 
-14.1 NAND Configuration Commands
-================================
+12.5.1 NAND Configuration Commands
+----------------------------------
 
 NAND chips must be declared in configuration scripts, plus some
 additional configuration that's done after OpenOCD has initialized.
@@ -5307,8 +5024,8 @@ additional configuration that's done after OpenOCD has initialized.
      (successfully) probe a device before you can use it with most other
      NAND commands.
 
-14.2 Erasing, Reading, Writing to NAND Flash
-============================================
+12.5.2 Erasing, Reading, Writing to NAND Flash
+----------------------------------------------
 
  -- Command: nand dump num filename offset length [oob_option]
      Reads binary data from the NAND device and writes it to the file,
@@ -5432,8 +5149,8 @@ additional configuration that's done after OpenOCD has initialized.
      hardward-computed ECC before the data is written.  This limitation
      may be removed in a future release.
 
-14.3 Other NAND commands
-========================
+12.5.3 Other NAND commands
+--------------------------
 
  -- Command: nand check_bad_blocks num [offset length]
      Checks for manufacturer bad block markers on the specified NAND
@@ -5469,8 +5186,8 @@ additional configuration that's done after OpenOCD has initialized.
      dangerous option, since writing blocks with the wrong ECC data can
      cause them to be marked as bad.
 
-14.4 NAND Driver List
-=====================
+12.5.4 NAND Driver List
+-----------------------
 
 As noted above, the 'nand device' command allows driver-specific options
 and behaviors.  Some controllers also activate controller-specific
@@ -5567,10 +5284,106 @@ commands.
      writing, their drivers don't include 'write_page' or 'read_page'
      methods, so 'nand raw_access' won't change any behavior.
 
-
-File: openocd.info,  Node: PLD/FPGA Commands,  Next: General Commands,  Prev: NAND Flash Commands,  Up: Top
+12.6 mFlash
+===========
 
-15 PLD/FPGA Commands
+12.6.1 mFlash Configuration
+---------------------------
+
+ -- Config Command: mflash bank soc base RST_pin target
+     Configures a mflash for SOC host bank at address BASE.  The pin
+     number format depends on the host GPIO naming convention.
+     Currently, the mflash driver supports s3c2440 and pxa270.
+
+     Example for s3c2440 mflash where RST PIN is GPIO B1:
+
+          mflash bank $_FLASHNAME s3c2440 0x10000000 1b 0
+
+     Example for pxa270 mflash where RST PIN is GPIO 43:
+
+          mflash bank $_FLASHNAME pxa270 0x08000000 43 0
+
+12.6.2 mFlash commands
+----------------------
+
+ -- Command: mflash config pll frequency
+     Configure mflash PLL. The FREQUENCY is the mflash input frequency,
+     in Hz.  Issuing this command will erase mflash's whole internal
+     nand and write new pll.  After this command, mflash needs
+     power-on-reset for normal operation.  If pll was newly configured,
+     storage and boot(optional) info also need to be update.
+
+ -- Command: mflash config boot
+     Configure bootable option.  If bootable option is set, mflash offer
+     the first 8 sectors (4kB) for boot.
+
+ -- Command: mflash config storage
+     Configure storage information.  For the normal storage operation,
+     this information must be written.
+
+ -- Command: mflash dump num filename offset size
+     Dump SIZE bytes, starting at OFFSET bytes from the beginning of the
+     bank NUM, to the file named FILENAME.
+
+ -- Command: mflash probe
+     Probe mflash.
+
+ -- Command: mflash write num filename offset
+     Write the binary file FILENAME to mflash bank NUM, starting at
+     OFFSET bytes from the beginning of the bank.
+
+   ---------- Footnotes ----------
+
+   (1) Currently there is a 'stellaris mass_erase' command.  That seems
+pointless since the same effect can be had using the standard 'flash
+erase_address' command.
+
+   (2) Currently there is a 'stm32f1x mass_erase' command.  That seems
+pointless since the same effect can be had using the standard 'flash
+erase_address' command.
+
+
+File: openocd.info,  Node: Flash Programming,  Next: PLD/FPGA Commands,  Prev: Flash Commands,  Up: Top
+
+13 Flash Programming
+********************
+
+OpenOCD implements numerous ways to program the target flash, whether
+internal or external.  Programming can be acheived by either using GDB
+*note Programming using GDB: programmingusinggdb, or using the cmds
+given in *note Flash Programming Commands: flashprogrammingcommands.
+
+
+To simplify using the flash cmds directly a jimtcl script is available
+that handles the programming and verify stage.  OpenOCD will
+program/verify/reset the target and optionally shutdown.
+
+The script is executed as follows and by default the following actions
+will be peformed.
+  1. 'init' is executed.
+  2. 'reset init' is called to reset and halt the target, any 'reset
+     init' scripts are executed.
+  3. 'flash write_image' is called to erase and write any flash using
+     the filename given.
+  4. 'verify_image' is called if 'verify' parameter is given.
+  5. 'reset run' is called if 'reset' parameter is given.
+  6. OpenOCD is shutdown if 'exit' parameter is given.
+
+An example of usage is given below.  *Note program::.
+
+     # program and verify using elf/hex/s19. verify and reset
+     # are optional parameters
+     openocd -f board/stm32f3discovery.cfg \
+     	-c "program filename.elf verify reset exit"
+
+     # binary files need the flash address passing
+     openocd -f board/stm32f3discovery.cfg \
+     	-c "program filename.bin exit 0x08000000"
+
+
+File: openocd.info,  Node: PLD/FPGA Commands,  Next: General Commands,  Prev: Flash Programming,  Up: Top
+
+14 PLD/FPGA Commands
 ********************
 
 Programmable Logic Devices (PLDs) and the more flexible Field
@@ -5580,7 +5393,7 @@ generally restrictive (cells are less functional, and there are no
 special purpose cells for memory or computational tasks), they share the
 same OpenOCD infrastructure.  Accordingly, both are called PLDs here.
 
-15.1 PLD/FPGA Configuration and Commands
+14.1 PLD/FPGA Configuration and Commands
 ========================================
 
 As it does for JTAG TAPs, debug targets, and flash chips (both NOR and
@@ -5602,7 +5415,7 @@ and new PLDs are defined by 'pld device driver_name'.
      Loads the file 'filename' into the PLD identified by NUM.  The file
      format must be inferred by the driver.
 
-15.2 PLD/FPGA Drivers, Options, and Commands
+14.2 PLD/FPGA Drivers, Options, and Commands
 ============================================
 
 Drivers may support PLD-specific options to the 'pld device' definition
@@ -5622,7 +5435,7 @@ type of PLD.
 
 File: openocd.info,  Node: General Commands,  Next: Architecture and Core Commands,  Prev: PLD/FPGA Commands,  Up: Top
 
-16 General Commands
+15 General Commands
 *******************
 
 The commands documented in this chapter here are common commands that
@@ -5646,7 +5459,7 @@ Intent:
    * Machine Interface The Tcl interface's intent is to be a machine
      interface.  The default Tcl port is 5555.
 
-16.1 Daemon Commands
+15.1 Daemon Commands
 ====================
 
  -- Command: exit
@@ -5694,7 +5507,7 @@ Intent:
  -- Command: add_script_search_dir [directory]
      Add DIRECTORY to the file/script search path.
 
-16.2 Target State handling
+15.2 Target State handling
 ==========================
 
 In this section "target" refers to a CPU configured as shown earlier
@@ -5802,7 +5615,7 @@ command with the name of the target which should become current.
      Unfortunately the code that was executed may have left the hardware
      in an unknown state.
 
-16.3 I/O Utilities
+15.3 I/O Utilities
 ==================
 
 These commands are available when OpenOCD is built with
@@ -5847,7 +5660,7 @@ _Note:_ there are several more such commands.
  -- Command: trunc filename
      Removes all data in the file 'filename'.
 
-16.4 Memory access commands
+15.4 Memory access commands
 ===========================
 
 These commands allow accesses of a specific size to the memory system.
@@ -5880,7 +5693,7 @@ controller to enable SDRAM.
      as a virtual address.  Otherwise, or if the optional PHYS flag is
      specified, ADDR is interpreted as a physical address.
 
-16.5 Image loading commands
+15.5 Image loading commands
 ===========================
 
  -- Command: dump_image filename address size
@@ -5913,7 +5726,8 @@ controller to enable SDRAM.
           proc load_image_bin {fname foffset address length } {
               # Load data from fname filename at foffset offset to
               # target at address. Load at most length bytes.
-              load_image $fname [expr $address - $foffset] bin $address $length
+              load_image $fname [expr $address - $foffset] bin \
+                         $address $length
           }
 
  -- Command: test_image filename [address ['bin'|'ihex'|'elf']]
@@ -5928,7 +5742,7 @@ controller to enable SDRAM.
      This will first attempt a comparison using a CRC checksum, if this
      fails it will try a binary compare.
 
-16.6 Breakpoint and Watchpoint commands
+15.6 Breakpoint and Watchpoint commands
 =======================================
 
 CPUs often make debug modules accessible through JTAG, with hardware
@@ -5960,7 +5774,7 @@ addition, CPUs almost always support software breakpoints.
      watchpoint should trigger.  The value may be first be masked using
      MASK to mark "don't care" fields.
 
-16.7 Misc Commands
+15.7 Misc Commands
 ==================
 
  -- Command: profile seconds filename [start end]
@@ -5979,7 +5793,7 @@ addition, CPUs almost always support software breakpoints.
 
 File: openocd.info,  Node: Architecture and Core Commands,  Next: JTAG Commands,  Prev: General Commands,  Up: Top
 
-17 Architecture and Core Commands
+16 Architecture and Core Commands
 *********************************
 
 Most CPUs have specialized JTAG operations to support debugging.
@@ -5987,7 +5801,7 @@ OpenOCD packages most such operations in its standard command framework.
 Some of those operations don't fit well in that framework, so they are
 exposed here as architecture or implementation (core) specific commands.
 
-17.1 ARM Hardware Tracing
+16.1 ARM Hardware Tracing
 =========================
 
 CPUs based on ARM cores may include standard tracing interfaces, based
@@ -6034,7 +5848,7 @@ ETM support in OpenOCD doesn't seem to be widely used yet.
      some newer cores; but not all of them support this original style
      of JTAG access.
 
-17.1.1 ETM Configuration
+16.1.1 ETM Configuration
 ------------------------
 
 ETM setup is coupled with the trace port driver configuration.
@@ -6106,7 +5920,7 @@ ETM setup is coupled with the trace port driver configuration.
      conditions, more complex than supported by the breakpoint hardware,
      happen.
 
-17.1.2 ETM Trace Operation
+16.1.2 ETM Trace Operation
 --------------------------
 
 After setting up the ETM, you can use it to collect data.  That data can
@@ -6161,7 +5975,7 @@ help set up any common tracing scenarios.
  -- Command: etm stop
      Stops trace data collection.
 
-17.1.3 Trace Port Drivers
+16.1.3 Trace Port Drivers
 -------------------------
 
 To use an ETM trace port it must be associated with a driver.
@@ -6217,7 +6031,7 @@ To use an ETM trace port it must be associated with a driver.
       -- Command: oocd_trace status
           Reports whether the capture clock is locked or not.
 
-17.2 Generic ARM
+16.2 Generic ARM
 ================
 
 These commands should be available on all ARM processors.  They are
@@ -6271,14 +6085,14 @@ available.
      operation requests by using a special SVC instruction that is
      trapped at the Supervisor Call vector by OpenOCD.
 
-17.3 ARMv4 and ARMv5 Architecture
+16.3 ARMv4 and ARMv5 Architecture
 =================================
 
 The ARMv4 and ARMv5 architectures are widely used in embedded systems,
 and introduced core parts of the instruction set in use today.  That
 includes the Thumb instruction set, introduced in the ARMv4T variant.
 
-17.3.1 ARM7 and ARM9 specific commands
+16.3.1 ARM7 and ARM9 specific commands
 --------------------------------------
 
 These commands are specific to ARM7 and ARM9 cores, like ARM7TDMI,
@@ -6316,7 +6130,7 @@ available.
      cables (FT2232), but might be unsafe if used with targets running
      at very low speeds, like the 32kHz startup clock of an AT91RM9200.
 
-17.3.2 ARM720T specific commands
+16.3.2 ARM720T specific commands
 --------------------------------
 
 These commands are available to ARM720T based CPUs, which are
@@ -6332,7 +6146,7 @@ commands.
      if a VALUE is provided, that value is written to that register.
      The OPCODE should be the value of either an MRC or MCR instruction.
 
-17.3.3 ARM9 specific commands
+16.3.3 ARM9 specific commands
 -----------------------------
 
 ARM9-family cores are built around ARM9TDMI or ARM9E (including ARM9EJS)
@@ -6352,7 +6166,7 @@ ARM966.
      them, or a list with one or more of the following: 'reset' 'undef'
      'swi' 'pabt' 'dabt' 'irq' 'fiq'.
 
-17.3.4 ARM920T specific commands
+16.3.4 ARM920T specific commands
 --------------------------------
 
 These commands are available to ARM920T based CPUs, which are
@@ -6387,7 +6201,7 @@ ARM9 commands.
  -- Command: arm920t read_mmu filename
      Dump the content of the ITLB and DTLB to a file named 'filename'.
 
-17.3.5 ARM926ej-s specific commands
+16.3.5 ARM926ej-s specific commands
 -----------------------------------
 
 These commands are available to ARM926ej-s based CPUs, which are
@@ -6401,7 +6215,7 @@ built from ARM926ej-s designs.
  -- Command: arm926ejs cache_info
      Print information about the caches found.
 
-17.3.6 ARM966E specific commands
+16.3.6 ARM966E specific commands
 --------------------------------
 
 These commands are available to ARM966 based CPUs, which are
@@ -6415,7 +6229,7 @@ addition to the ARM, ARM7/ARM9, and ARM9 commands.
      current control over bits 31..30 from that table, as required for
      BIST support.
 
-17.3.7 XScale specific commands
+16.3.7 XScale specific commands
 -------------------------------
 
 Some notes about the debug implementation on the XScale CPUs:
@@ -6555,10 +6369,10 @@ implementations of the ARMv5TE architecture.
 
      Without arguments, the current settings are displayed.
 
-17.4 ARMv6 Architecture
+16.4 ARMv6 Architecture
 =======================
 
-17.4.1 ARM11 specific commands
+16.4.1 ARM11 specific commands
 ------------------------------
 
  -- Command: arm11 memwrite burst ['enable'|'disable']
@@ -6592,10 +6406,10 @@ implementations of the ARMv5TE architecture.
      fact is using coprocessor 14 register 7 itself) but all current
      ARM11 cores _except the ARM1176_ use the same six bits.
 
-17.5 ARMv7 Architecture
+16.5 ARMv7 Architecture
 =======================
 
-17.5.1 ARMv7 Debug Access Port (DAP) specific commands
+16.5.1 ARMv7 Debug Access Port (DAP) specific commands
 ------------------------------------------------------
 
 These commands are specific to ARM architecture v7 Debug Access Port
@@ -6626,7 +6440,7 @@ addition to other core-specific commands that may be available.
      fix CSW_SPROT from register AP_REG_CSW on selected dap.  Defaulting
      to 0.
 
-17.5.2 ARMv7-M specific commands
+16.5.2 ARMv7-M specific commands
 --------------------------------
 
  -- Command: tpiu config ('disable' | (('external' | 'internal
@@ -6687,9 +6501,11 @@ addition to other core-specific commands that may be available.
           (FT2232H's base frequency is 60MHz, spd_cust allows to alias
           38400 baud with our custom divisor to get 12MHz)
        4. 'itmdump -f /dev/ttyUSB1 -d1'
-       5. 'openocd -f interface/stlink-v2-1.cfg -c "transport select
-          hla_swd" -f target/stm32l1.cfg -c "tpiu config external uart
-          off 24000000 12000000"'
+       5. OpenOCD invocation line:
+               openocd -f interface/stlink-v2-1.cfg \
+                       -c "transport select hla_swd" \
+                       -f target/stm32l1.cfg \
+                       -c "tpiu config external uart off 24000000 12000000"
 
  -- Command: itm port PORT ('0'|'1'|'on'|'off')
      Enable or disable trace output for ITM stimulus PORT (counting from
@@ -6698,7 +6514,7 @@ addition to other core-specific commands that may be available.
  -- Command: itm ports ('0'|'1'|'on'|'off')
      Enable or disable trace output for all ITM stimulus ports.
 
-17.5.3 Cortex-M specific commands
+16.5.3 Cortex-M specific commands
 ---------------------------------
 
  -- Command: cortex_m maskisr ('auto'|'on'|'off')
@@ -6748,7 +6564,7 @@ addition to other core-specific commands that may be available.
      'reset-init' event handler to manually reset the peripherals.
      *Note Target Events: targetevents.
 
-17.6 Intel Architecture
+16.6 Intel Architecture
 =======================
 
 Intel Quark X10xx is the first product in the Quark family of SoCs.  It
@@ -6763,7 +6579,7 @@ https://communities.intel.com/community/makers/documentation
      doc num 329866)
    * Intel Quark SoC X1000 Datasheet (web search for doc num 329676)
 
-17.6.1 x86 32-bit specific commands
+16.6.1 x86 32-bit specific commands
 -----------------------------------
 
 The three main address spaces for x86 are memory, I/O and configuration
@@ -6794,13 +6610,13 @@ address space.
      Write the contents of a 8-bit I/O port to address range 0x0000 -
      0xffff.
 
-17.7 OpenRISC Architecture
+16.7 OpenRISC Architecture
 ==========================
 
 The OpenRISC CPU is a soft core.  It is used in a programmable SoC which
 can be configured with any of the TAP / Debug Unit available.
 
-17.7.1 TAP and Debug Unit selection commands
+16.7.1 TAP and Debug Unit selection commands
 --------------------------------------------
 
  -- Command: tap_select ('vjtag'|'mohor'|'xilinx_bscan')
@@ -6816,7 +6632,7 @@ can be configured with any of the TAP / Debug Unit available.
      skips status checking between bytes while doing read or write
      bursts.
 
-17.7.2 Registers commands
+16.7.2 Registers commands
 -------------------------
 
  -- Command: addreg [name] [address] [feature] [reg_group]
@@ -6839,7 +6655,7 @@ can be configured with any of the TAP / Debug Unit available.
      "debug", "perf", "power", "pic", "timer" or any new group created
      with addreg command.
 
-17.8 Software Debug Messages and Tracing
+16.8 Software Debug Messages and Tracing
 ========================================
 
 OpenOCD can process certain requests from target software, when the
