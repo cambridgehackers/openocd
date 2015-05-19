@@ -11,7 +11,7 @@ Build-Depends: cdbs, debhelper (>= 7), autotools-dev, libftdi-dev,
                libjim-dev,
                pkg-config,
                dh-autoreconf
-Standards-Version: 3.9.5
+Standards-Version: 3.9.6
 Homepage: http://openocd.sourceforge.net/
 Vcs-Browser: http://anonscm.debian.org/cgit/crosstoolchain/openocd.git
 Vcs-Git: git://anonscm.debian.org/crosstoolchain/openocd.git
