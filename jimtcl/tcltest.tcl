@@ -7,10 +7,8 @@ set testinfo(stoponerror) 0
 set testinfo(numfail) 0
 set testinfo(numskip) 0
 set testinfo(numtests) 0
+set testinfo(reported) 0
 set testinfo(failed) {}
-
-set testdir [file dirname $::argv0]
-set bindir [file dirname [info nameofexecutable]]
 
 if {[lsearch $argv "-verbose"] >= 0 || [info exists env(testverbose)]} {
 	incr testinfo(verbose)
@@ -71,7 +69,13 @@ if {[catch {info version}]} {
 	return
 }
 
-lappend auto_path $testdir $bindir [file dirname [pwd]]
+# Add some search paths for packages
+if {[exists argv0]} {
+	# The directory containing the original script
+	lappend auto_path [file dirname $argv0]
+}
+# The directory containing the jimsh executable
+lappend auto_path [file dirname [info nameofexecutable]]
 
 # For Jim, this is reasonable compatible tcltest
 proc makeFile {contents name {dir {}}} {
@@ -148,7 +152,7 @@ proc testConstraint {constraint {bool {}}} {
 		if {[info exists ::tcltest::testConstraints($constraint)]} {
 			return $::tcltest::testConstraints($constraint)
 		}
-		return -code error "unknown constraint: $c"
+		return -code error "unknown constraint: $constraint"
 		return 1
 	} else {
 		set ::tcltest::testConstraints($constraint) $bool
@@ -248,6 +252,11 @@ proc ::tcltest::cleanupTests {} {
 }
 
 proc testreport {} {
+	if {$::testinfo(reported)} {
+		return
+	}
+	incr ::testinfo(reported)
+
 	if {$::testinfo(verbose)} {
 		puts -nonewline "\n$::argv0"
 	} else {
