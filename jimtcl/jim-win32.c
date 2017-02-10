@@ -37,7 +37,7 @@
 /* Apparently windows.h and cygwin don't mix, but we seem to get
  * away with it here. Use at your own risk under cygwin
  */
-#if defined(__CYGWIN__)
+#if defined(__CYGWIN__) || defined(__MINGW32__)
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #endif
@@ -53,6 +53,10 @@
 #pragma comment(lib, "advapi32")
 #pragma comment(lib, "psapi")
 #endif /* _MSC_VER >= 1000 */
+
+#if _WIN32_WINNT < 0x600
+    #define GetTickCount64 GetTickCount
+#endif
 
 static Jim_Obj *
 Win32ErrorObj(Jim_Interp *interp, const char * szPrefix, DWORD dwError)
@@ -322,7 +326,7 @@ Win32_GetVersion(Jim_Interp *interp, int objc, Jim_Obj * const *objv)
 static int
 Win32_GetTickCount(Jim_Interp *interp, int objc, Jim_Obj * const *objv)
 {
-    Jim_SetResult(interp, Jim_NewIntObj(interp, GetTickCount()));
+    Jim_SetResult(interp, Jim_NewIntObj(interp, GetTickCount64()));
     return JIM_OK;
 }
 
@@ -473,6 +477,29 @@ Win32_FreeLibrary(Jim_Interp *interp, int objc, Jim_Obj * const *objv)
     return r;
 }
 
+/* win32.MessageBox message title ?type? */
+static int
+Win32_MessageBox(Jim_Interp *interp, int objc, Jim_Obj * const *objv)
+{
+    int r;
+    const char *message, *title;
+    long int type = 0;
+
+    if (objc < 3 || objc > 4) {
+        Jim_WrongNumArgs(interp, 1, objv, "message title ?type?");
+        return JIM_ERR;
+    }
+    message = Jim_String(objv[1]);
+    title = Jim_String(objv[2]);
+    if (objc == 4) {
+        if (Jim_GetLong(interp, objv[3], &type) != JIM_OK)
+            return JIM_ERR;
+    }
+    r = (int) MessageBoxA(NULL, message, title, (int)type);
+    Jim_SetResultInt(interp, r);
+    return JIM_OK;
+}
+
 
 /* ---------------------------------------------------------------------- */
 
@@ -505,6 +532,7 @@ Jim_win32Init(Jim_Interp *interp)
     CMD(GetModuleHandle);
     CMD(LoadLibrary);
     CMD(FreeLibrary);
+    CMD(MessageBox);
 
     return JIM_OK;
 }
